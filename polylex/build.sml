@@ -5,17 +5,17 @@
 val () = print "=== Building PolyML Lexer Harness ===\n\n";
 
 (* Load original PolyML files in dependency order *)
-val () = print "Loading original/Misc.ML...\n";
-use "original/Misc.ML";
+val () = print "Loading originals/Misc.ML...\n";
+use "originals/Misc.ML";
 
-val () = print "Loading original/HashTable.ML...\n";
-use "original/HashTable.ML";
+val () = print "Loading originals/HashTable.ML...\n";
+use "originals/HashTable.ML";
 
-val () = print "Loading original/SymbolsSig.sml...\n";
-use "original/SymbolsSig.sml";
+val () = print "Loading originals/SymbolsSig.sml...\n";
+use "originals/SymbolsSig.sml";
 
-val () = print "Loading original/Symbols.ML...\n";
-use "original/Symbols.ML";
+val () = print "Loading originals/Symbols.ML...\n";
+use "originals/Symbols.ML";
 
 (* Load stub Pretty (instead of original which uses Address/RunCall) *)
 val () = print "Loading stubs/PRETTY.sig...\n";
@@ -25,20 +25,20 @@ val () = print "Loading stubs/Pretty.sml...\n";
 use "stubs/Pretty.sml";
 
 (* Continue with original files *)
-val () = print "Loading original/DEBUG.sig...\n";
-use "original/DEBUG.sig";
+val () = print "Loading originals/DEBUG.sig...\n";
+use "originals/DEBUG.sig";
 
-val () = print "Loading original/Debug.ML...\n";
-use "original/Debug.ML";
+val () = print "Loading originals/Debug.ML...\n";
+use "originals/Debug.ML";
 
-val () = print "Loading original/LEXSIG.sml...\n";
-use "original/LEXSIG.sml";
+val () = print "Loading originals/LEXSIG.sml...\n";
+use "originals/LEXSIG.sml";
 
-val () = print "Loading original/LEX_.ML...\n";
-use "original/LEX_.ML";
+val () = print "Loading originals/LEX_.ML...\n";
+use "originals/LEX_.ML";
 
-val () = print "Loading original/Lex.ML...\n";
-use "original/Lex.ML";
+val () = print "Loading originals/Lex.ML...\n";
+use "originals/Lex.ML";
 
 val () = print "\n=== All modules loaded successfully! ===\n\n";
 

@@ -1,5 +1,5 @@
 (* Main.sml - Lexer harness for fuzzing *)
-(* Reads input from stdin, tokenises it, outputs tokens to stdout or file*)
+(* Reads input from stdin, tokenises it, outputs tokens to stdout *)
 
 structure Main =
 struct
@@ -68,17 +68,39 @@ struct
     (* Main entry point *)
     fun main () =
     let
-        (* Read all input from stdin *)
-        val input = TextIO.inputAll TextIO.stdIn
+        (* Parse arguments: [input] or [input, output] *)
+        val args = CommandLine.arguments()
+        val (input, outStream, closeOut) = 
+            case args of
+                [infile] => 
+                    let
+                        val inStream = TextIO.openIn infile
+                        val content = TextIO.inputAll inStream
+                        val () = TextIO.closeIn inStream
+                    in
+                        (content, TextIO.stdOut, false)
+                    end
+              | [infile, outfile] =>
+                    let
+                        val inStream = TextIO.openIn infile
+                        val content = TextIO.inputAll inStream
+                        val () = TextIO.closeIn inStream
+                    in
+                        (content, TextIO.openOut outfile, true)
+                    end
+              | [] => (TextIO.inputAll TextIO.stdIn, TextIO.stdOut, false)
+              | _ => (TextIO.output(TextIO.stdErr, "Usage: sml-lexer [input [output]]\n");
+                      OS.Process.exit OS.Process.failure)
         
         (* Tokenise *)
         val tokens = tokenise input
         
         (* Output each token on its own line *)
         fun outputToken (sym, text) =
-            print (Symbols.tokenToString(sym, text) ^ "\n")
+            TextIO.output(outStream, Symbols.tokenToString(sym, text) ^ "\n")
     in
         List.app outputToken tokens;
+        if closeOut then TextIO.closeOut outStream else ();
         OS.Process.exit OS.Process.success
     end
     handle e => (
