@@ -1,70 +1,67 @@
-# PolyML Lexer Harness for Fuzzing
+# PolyML Lexer (Lifted from the compiler)
 
-A standalone lexer harness using the **original PolyML lexer code**, designed for 
-differential testing against your Sulzmann-Lu derivative oracle.
+A standalone lexer using the **original PolyML lexer code**, designed for 
+differential testing against a verified oracle.
 
 ## Quick Start
+### 1. Install PolyML
+The lexer wrapper is written in Standard ML and needs to be compiled with PolyML itself. That guarantees that the lexer files are compiled exactly as in the main compiler and increases confidence in any testing effort.
 
-### 1. Copy Original PolyML Files
-
-First, copy the required files from the PolyML repository into `original/`:
-
-```bash
-# Clone PolyML if you haven't
-git clone https://github.com/polyml/polyml.git
-
-# Copy required files
-mkdir -p original
-cp polyml/mlsource/MLCompiler/Misc.ML           original/
-cp polyml/mlsource/MLCompiler/HashTable.ML      original/
-cp polyml/mlsource/MLCompiler/SymbolsSig.sml    original/
-cp polyml/mlsource/MLCompiler/Symbols.ML        original/
-cp polyml/mlsource/MLCompiler/DEBUG.sig         original/
-cp polyml/mlsource/MLCompiler/Debug.ML          original/
-cp polyml/mlsource/MLCompiler/LEXSIG.sml        original/
-cp polyml/mlsource/MLCompiler/LEX_.ML           original/
-cp polyml/mlsource/MLCompiler/Lex.ML            original/
-```
-
-### 2. Test Interactively
+### 2. Build lexer Executable
 
 ```bash
-poly < test.sml
+polyc build.sml
+cc -o polylex polylex.o -lpolymain -lpolyml
 ```
-
-### 3. Build Standalone Executable
+In case the linker fails, it may be because the PolyML libraries are in some non-standard location. Find them with:
 
 ```bash
-poly < build.sml
-cc -o sml-lexer sml-lexer.o -lpolymain -lpolyml
+find /usr -name "libpolyml*" 2>/dev/null
 ```
 
-### 4. Use
+and then link with the explicit path:
+```bash
+cc -o polylex polylex.o -L/<that path> -Wl,-rpath,<that path> -lpolymain -lpolyml
+```
+
+### 4. Using:
+You can directly input a string and the output will go to stdout:
 
 ```bash
 echo 'val x = 42' | ./sml-lexer
 ```
 
+Alternatively, you can also use an input file (output goes to stdout):
+
+```bash
+./sml-lexer input.sml
+```
+
+Or, you can use both an input and output file (reads from input.sml and writes to output.txt):
+
+```bash
+./sml-lexer input.sml output.txt
+```
+
 ## Directory Structure
 
 ```
-polyml-lexer-harness/
-├── original/           # Untouched files from PolyML (you copy these)
+polylex/
+├── originals/          # Files from PolyML
 │   ├── Misc.ML         # Exception definitions
 │   ├── HashTable.ML    # Hash table for keyword lookup
 │   ├── SymbolsSig.sml  # Token type signature
-│   ├── Symbols.ML      # Token definitions
+│   ├── Symbols.ML      # Token definitions (+ custom export format. only modification from the original compiler)
 │   ├── DEBUG.sig       # Debug parameters signature
 │   ├── Debug.ML        # Debug parameters
 │   ├── LEXSIG.sml      # Lexer signature
-│   ├── LEX_.ML         # THE LEXER (this is what you're testing!)
+│   ├── LEX_.ML         # THE LEXER
 │   └── Lex.ML          # Functor instantiation
 ├── stubs/              # Simplified replacements for PolyML internals
 │   ├── PRETTY.sig      # Pretty printing signature
 │   └── Pretty.sml      # Pretty printing (simplified)
-├── Main.sml            # Harness: stdin → tokens → stdout
+├── Main.sml            # Wrapper to call the lexer on inputs
 ├── build.sml           # Build script
-├── test.sml            # Interactive test script
 └── README.md
 ```
 
@@ -75,83 +72,6 @@ PolyML primitives for inspecting runtime representations. These aren't needed
 for lexing - Pretty is only used for error message formatting. The stub 
 provides the same interface but with simple datatypes.
 
-## Output Format
-
-Tokens are output one per line:
-
-```
-IDENT("x")           # Identifier
-TYVAR("'a")          # Type variable  
-STRING("hello")      # String constant
-INT(42)              # Integer
-REAL(3.14)           # Real
-WORD(0wx1F)          # Word constant
-CHAR("c")            # Character
-val                  # Keywords
-fun
-let
-...
-(                    # Punctuation
-)
-[
-]
-=>
-->
-...
-```
-
-## Fuzzing with AFL++
-
-### Option A: AFL++ with QEMU mode (no recompilation)
-
-```bash
-# Build normally
-poly < build.sml
-cc -o sml-lexer sml-lexer.o -lpolymain -lpolyml
-
-# Fuzz with QEMU instrumentation
-mkdir -p corpus findings
-echo 'val x = 1' > corpus/seed.sml
-afl-fuzz -Q -i corpus -o findings -- ./sml-lexer
-```
-
-### Option B: Instrument PolyML itself (more complex)
-
-This requires recompiling PolyML with AFL++ instrumentation, which is beyond
-the scope of this harness.
-
-## Differential Testing Workflow
-
-```bash
-# For each input:
-INPUT="val x = 42"
-
-# Get PolyML tokens
-echo "$INPUT" | ./sml-lexer > poly_tokens.txt
-
-# Get your oracle tokens
-echo "$INPUT" | ./your-verilex-oracle > oracle_tokens.txt
-
-# Compare
-diff poly_tokens.txt oracle_tokens.txt && echo "MATCH" || echo "DIVERGENCE"
-```
-
-## Troubleshooting
-
-### "Cannot find Misc" or similar
-Make sure you copied all files to `original/` directory.
-
-### "Undefined structure Universal"
-`Universal` is part of PolyML's basis library. It should be available 
-automatically when running under PolyML.
-
-### Link errors
-You may need to specify the PolyML library path:
-```bash
-cc -o sml-lexer sml-lexer.o -L/usr/local/lib -lpolymain -lpolyml
-```
 
 ## License
-
 - Original PolyML files: LGPL 2.1 (see PolyML repository)
-- Stubs and harness: Provided for your project use
