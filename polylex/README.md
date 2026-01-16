@@ -28,19 +28,19 @@ cc -o polylex polylex.o -L/<that path> -Wl,-rpath,<that path> -lpolymain -lpolym
 You can directly input a string and the output will go to stdout:
 
 ```bash
-echo 'val x = 42' | ./sml-lexer
+echo 'val x = 42' | ./polylex
 ```
 
 Alternatively, you can also use an input file (output goes to stdout):
 
 ```bash
-./sml-lexer input.sml
+./polylex input.sml
 ```
 
 Or, you can use both an input and output file (reads from input.sml and writes to output.txt):
 
 ```bash
-./sml-lexer input.sml output.txt
+./polylex input.sml output.txt
 ```
 
 ## Directory Structure
