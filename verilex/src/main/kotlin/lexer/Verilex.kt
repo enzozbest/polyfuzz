@@ -40,13 +40,3 @@ object Verilex {
      */
     fun lex(r: RegularExpression, s: String): List<Pair<String, String>> = lexInternal(r, s.toList()).env()
 }
-
-fun main(){
-    val r1 = "op" T ("+" X "-" X "*" X "/")
-    val r2 = "id" T RANGE(('a'..'z').toSet()).P()
-
-    val r = (r1 X r2).S().toCharFunctionFormat()
-
-    val test = "hello+world"
-    println(Verilex.lex(r, test))
-}
