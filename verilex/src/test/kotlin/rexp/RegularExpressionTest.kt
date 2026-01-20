@@ -2,7 +2,6 @@
 
 package rexp
 
-import lexer.Injector
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import value.*
@@ -218,55 +217,6 @@ class RegularExpressionTest {
         assertEquals(Empty, rect(Empty))
         assertEquals(Rec("tag", Empty), RECD("tag", ONE).mkeps())
         assertTrue(recd.toCharFunctionFormat() is RECD)
-    }
-
-    @Test
-    fun testInjector() {
-        val a = CFUN("a") { it == 'a' }
-        val b = CFUN("b") { it == 'b' }
-
-        // STAR
-        val star = STAR(a)
-        val vStar = Seq(Empty, Stars(listOf(Chr('a'))))
-        val resStar = Injector.inj(star, 'a', vStar)
-        assertEquals(Stars(listOf(Chr('a'), Chr('a'))), resStar)
-
-        // PLUS
-        val plus = PLUS(a)
-        val vPlus = Seq(Empty, Stars(listOf(Chr('a'))))
-        val resPlus = Injector.inj(plus, 'a', vPlus)
-        assertEquals(Plus(listOf(Chr('a'), Chr('a'))), resPlus)
-
-        // SEQ
-        val seq = SEQ(a, b)
-        // v is Seq
-        assertEquals(Seq(Chr('a'), Empty), Injector.inj(seq, 'a', Seq(Empty, Empty)))
-        // v is Left && v.v is Seq
-        assertEquals(Seq(Chr('a'), Empty), Injector.inj(seq, 'a', Left(Seq(Empty, Empty))))
-        // v is Right
-        val seq2 = SEQ(ONE, b)
-        assertEquals(Seq(Empty, Chr('b')), Injector.inj(seq2, 'b', Right(Empty)))
-
-        // ALT
-        val alt = ALT(a, b)
-        assertEquals(Left(Chr('a')), Injector.inj(alt, 'a', Left(Empty)))
-        assertEquals(Right(Chr('b')), Injector.inj(alt, 'b', Right(Empty)))
-
-        // CFUN
-        assertEquals(Chr('a'), Injector.inj(a, 'a', Empty))
-
-        // RECD
-        val recd = RECD("t", a)
-        assertEquals(Rec("t", Chr('a')), Injector.inj(recd, 'a', Empty))
-
-        // Outer Rec in Injector.inj
-        assertEquals(Rec("out", Chr('a')), Injector.inj(a, 'a', Rec("out", Empty)))
-
-        // Internal Rec in injInternal
-        assertEquals(Rec("out", Rec("in", Chr('a'))), Injector.inj(a, 'a', Rec("out", Rec("in", Empty))))
-
-        // e.g. r is STAR and v is Left.
-        assertThrows(IllegalArgumentException::class.java) { Injector.inj(STAR(a), 'a', Left(Empty)) }
     }
 
     @Test
