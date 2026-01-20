@@ -59,6 +59,9 @@ class RegularExpressionTest {
         val lowered = r.toCharFunctionFormat()
         assertTrue(lowered is CFUN)
         assertEquals("[a,b]", lowered.toString())
+        assertEquals(ONE, lowered.der('a'))
+        assertEquals(ONE, lowered.der('b'))
+        assertEquals(ZERO, lowered.der('c'))
 
         // Before lowering, these should throw
         assertThrows(IllegalStateException::class.java) { r.nullable() }
