@@ -255,18 +255,18 @@ class RegularExpressionTest {
 
     @Test
     fun testRectification() {
-        val rRect = Rectification.recd(Rectification.id)
+        val rRect = RectificationFunctions.recd(RectificationFunctions.id)
         assertEquals(Rec("x", Empty), rRect(Rec("x", Empty)))
         assertThrows(IllegalArgumentException::class.java) { rRect(Empty) }
 
         // alt
-        val fAlt = Rectification.alt(Rectification.id, Rectification.id)
+        val fAlt = RectificationFunctions.alt(RectificationFunctions.id, RectificationFunctions.id)
         assertEquals(Left(Empty), fAlt(Left(Empty)))
         assertEquals(Right(Empty), fAlt(Right(Empty)))
         assertThrows(IllegalArgumentException::class.java) { fAlt(Empty) }
 
         // seq
-        val fSeq = Rectification.seq(Rectification.id, Rectification.id)
+        val fSeq = RectificationFunctions.seq(RectificationFunctions.id, RectificationFunctions.id)
         assertEquals(Seq(Empty, Empty), fSeq(Seq(Empty, Empty)))
         assertThrows(IllegalArgumentException::class.java) { fSeq(Empty) }
     }

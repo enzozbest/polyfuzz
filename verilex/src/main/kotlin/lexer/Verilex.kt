@@ -1,11 +1,6 @@
 package lexer
 
-import rexp.P
-import rexp.RANGE
 import rexp.RegularExpression
-import rexp.S
-import rexp.T
-import rexp.X
 import value.Value
 
 /**
@@ -25,8 +20,15 @@ object Verilex {
      * representation of the match. When the list is empty, it either returns
      * the epsilon value (`mkeps`) if the regex is nullable, or throws.
      */
-    private fun lexInternal(r: RegularExpression, s: List<Char>): Value = when {
-            s.isEmpty() -> if(r.nullable()) r.mkeps() else error("Lexing error: nullable called on $r")
+    private fun lexInternal(
+        r: RegularExpression,
+        s: List<Char>,
+    ): Value =
+        when {
+            s.isEmpty() -> {
+                if (r.nullable()) r.mkeps() else error("Lexing error: nullable called on $r")
+            }
+
             else -> {
                 val c = s[0]
                 val cs = s.drop(1)
@@ -34,9 +36,13 @@ object Verilex {
                 Injector.inj(r, c, fSimp(lexInternal(rSimp, cs)))
             }
         }
+
     /**
      * Run the lexer described by [r] over [s], returning the tagged tokens as
      * a list of `(tag, lexeme)` pairs. The tags are introduced using `"name" T r`.
      */
-    fun lex(r: RegularExpression, s: String): List<Pair<String, String>> = lexInternal(r, s.toList()).env()
+    fun lex(
+        r: RegularExpression,
+        s: String,
+    ): List<Pair<String, String>> = lexInternal(r, s.toList()).env()
 }

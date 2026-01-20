@@ -59,7 +59,7 @@ data object ZERO : RegularExpression() {
 
     override fun der(c: Char) = ZERO
 
-    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, Rectification.id)
+    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, RectificationFunctions.id)
 
     override fun mkeps(): Value = error("mkeps not allowed on regex of type ZERO: $this")
 }
@@ -74,7 +74,7 @@ data object ONE : RegularExpression() {
 
     override fun der(c: Char) = ZERO
 
-    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, Rectification.id)
+    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, RectificationFunctions.id)
 
     override fun mkeps(): Value = Empty
 }
@@ -126,7 +126,7 @@ data class CFUN(
 
     override fun der(c: Char) = if (f(c)) ONE else ZERO
 
-    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, Rectification.id)
+    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, RectificationFunctions.id)
 
     override fun mkeps(): Value = error("mkeps not allowed on regex of type CFUN: $this")
 }
@@ -148,10 +148,10 @@ data class ALT(
         val (r1s, f1s) = r1.simp()
         val (r2s, f2s) = r2.simp()
         return when {
-            r1s == ZERO -> Pair(r2s, Rectification.right(f2s))
-            r2s == ZERO -> Pair(r1s, Rectification.left(f1s))
-            r1s == r2s -> Pair(r1s, Rectification.left(f1s))
-            else -> Pair(ALT(r1s, r2s), Rectification.alt(f1s, f2s))
+            r1s == ZERO -> Pair(r2s, RectificationFunctions.right(f2s))
+            r2s == ZERO -> Pair(r1s, RectificationFunctions.left(f1s))
+            r1s == r2s -> Pair(r1s, RectificationFunctions.left(f1s))
+            else -> Pair(ALT(r1s, r2s), RectificationFunctions.alt(f1s, f2s))
         }
     }
 
@@ -180,11 +180,11 @@ data class SEQ(
         val (r1s, f1s) = r1.simp()
         val (r2s, f2s) = r2.simp()
         return when {
-            r1s == ZERO -> Pair(ZERO, Rectification.ERROR)
-            r2s == ZERO -> Pair(ZERO, Rectification.ERROR)
-            r1s == ONE -> Pair(r2s, Rectification.seq_Empty1(f1s, f2s))
-            r2s == ONE -> Pair(r1s, Rectification.seq_Empty2(f1s, f2s))
-            else -> Pair(SEQ(r1s, r2s), Rectification.seq(f1s, f2s))
+            r1s == ZERO -> Pair(ZERO, RectificationFunctions.ERROR)
+            r2s == ZERO -> Pair(ZERO, RectificationFunctions.ERROR)
+            r1s == ONE -> Pair(r2s, RectificationFunctions.seqEmpty1(f1s, f2s))
+            r2s == ONE -> Pair(r1s, RectificationFunctions.seqEmpty2(f1s, f2s))
+            else -> Pair(SEQ(r1s, r2s), RectificationFunctions.seq(f1s, f2s))
         }
     }
 
@@ -203,7 +203,7 @@ data class STAR(
 
     override fun der(c: Char) = SEQ(r.der(c), STAR(r))
 
-    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, Rectification.id)
+    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, RectificationFunctions.id)
 
     override fun mkeps(): Value = Stars(emptyList())
 }
@@ -220,7 +220,7 @@ data class PLUS(
 
     override fun der(c: Char) = SEQ(r.der(c), STAR(r))
 
-    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, Rectification.id)
+    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, RectificationFunctions.id)
 
     override fun mkeps(): Value = Plus(listOf(r.mkeps()))
 }
@@ -238,7 +238,7 @@ data class RECD(
 
     override fun der(c: Char) = r.der(c)
 
-    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, Rectification.id)
+    override fun simp(): Pair<RegularExpression, (Value) -> Value> = Pair(this, RectificationFunctions.id)
 
     override fun mkeps(): Value = Rec(x, r.mkeps())
 }
