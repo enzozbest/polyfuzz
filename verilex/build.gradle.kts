@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.3.0"
     id("jacoco")
 }
 
@@ -55,5 +55,5 @@ tasks.register("coverage") {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(23)
 }
