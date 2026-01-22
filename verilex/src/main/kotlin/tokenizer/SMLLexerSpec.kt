@@ -18,38 +18,38 @@ import rexp.X
  */
 object SMLLexerSpec {
     private val reservedWords: RegularExpression by lazy {
-        ("abstype" T SMLReservedWords.abstype) X
-            ("and" T SMLReservedWords.and) X
-            ("andalso" T SMLReservedWords.andalso) X
-            ("as" T SMLReservedWords.as_) X
-            ("case" T SMLReservedWords.case) X
-            ("datatype" T SMLReservedWords.datatype) X
-            ("do" T SMLReservedWords.do_) X
-            ("else" T SMLReservedWords.else_) X
-            ("end" T SMLReservedWords.end) X
-            ("exception" T SMLReservedWords.exception) X
-            ("fn" T SMLReservedWords.fn) X
-            ("fun" T SMLReservedWords.fun_) X
-            ("handle" T SMLReservedWords.handle) X
-            ("if" T SMLReservedWords.if_) X
-            ("in" T SMLReservedWords.in_) X
-            ("infix" T SMLReservedWords.infix) X
-            ("infixr" T SMLReservedWords.infixr) X
-            ("let" T SMLReservedWords.let) X
-            ("local" T SMLReservedWords.local) X
-            ("nonfix" T SMLReservedWords.nonfix) X
-            ("of" T SMLReservedWords.of_) X
-            ("op" T SMLReservedWords.op_) X
-            ("open" T SMLReservedWords.open) X
-            ("orelse" T SMLReservedWords.orelse) X
-            ("raise" T SMLReservedWords.raise) X
-            ("rec" T SMLReservedWords.rec) X
-            ("then" T SMLReservedWords.then) X
-            ("type" T SMLReservedWords.type) X
-            ("val" T SMLReservedWords.val_) X
-            ("with" T SMLReservedWords.with) X
-            ("withtype" T SMLReservedWords.withtype) X
-            ("while" T SMLReservedWords.while_)
+        ("ABSTYPE" T SMLReservedWords.abstype) X
+            ("AND" T SMLReservedWords.and) X
+            ("ANDALSO" T SMLReservedWords.andalso) X
+            ("AS" T SMLReservedWords.as_) X
+            ("CASE" T SMLReservedWords.case) X
+            ("DATATYPE" T SMLReservedWords.datatype) X
+            ("DO" T SMLReservedWords.do_) X
+            ("ELSE" T SMLReservedWords.else_) X
+            ("END" T SMLReservedWords.end) X
+            ("EXCEPTION" T SMLReservedWords.exception) X
+            ("FN" T SMLReservedWords.fn) X
+            ("FUN" T SMLReservedWords.fun_) X
+            ("HANDLE" T SMLReservedWords.handle) X
+            ("IF" T SMLReservedWords.if_) X
+            ("IN" T SMLReservedWords.in_) X
+            ("INFIX" T SMLReservedWords.infix) X
+            ("INFIXR" T SMLReservedWords.infixr) X
+            ("LET" T SMLReservedWords.let) X
+            ("LOCAL" T SMLReservedWords.local) X
+            ("NONFIX" T SMLReservedWords.nonfix) X
+            ("OF" T SMLReservedWords.of_) X
+            ("OP" T SMLReservedWords.op_) X
+            ("OPEN" T SMLReservedWords.open) X
+            ("ORELSE" T SMLReservedWords.orelse) X
+            ("RAISE" T SMLReservedWords.raise) X
+            ("REC" T SMLReservedWords.rec) X
+            ("THEN" T SMLReservedWords.then) X
+            ("TYPE" T SMLReservedWords.type) X
+            ("VAL" T SMLReservedWords.val_) X
+            ("WITH" T SMLReservedWords.with) X
+            ("WITHTYPE" T SMLReservedWords.withtype) X
+            ("WHILE" T SMLReservedWords.while_)
     }
 
     private val punctuation =
@@ -71,23 +71,20 @@ object SMLLexerSpec {
             ("#" T SMLReservedWords.hash)
 
     private val literals =
-        ("hex_word" T SMLConstants.hexWord) X
-            ("word" T SMLConstants.decimalWord) X
-            ("hex_integer" T SMLConstants.hexInteger) X
-            ("real" T SMLConstants.real) X
-            ("integer" T SMLConstants.decimalInteger) X
-            ("string" T SMLStrings.string) X
-            ("char" T SMLStrings.char)
+            ("WORD" T (SMLConstants.decimalWord X SMLConstants.hexWord)) X
+            ("REAL" T SMLConstants.real) X
+            ("INT" T (SMLConstants.decimalInteger X SMLConstants.hexInteger)) X
+            ("STRING" T SMLStrings.string) X
+            ("CHAR" T SMLStrings.char)
 
     private val identifiers =
-        ("etyvar" T SMLIdentifiers.etyvar) X // Must come before "tyvar"
-            ("tyvar" T SMLIdentifiers.tyvar) X
+        ("ETYVAR" T SMLIdentifiers.etyvar) X // Must come before "tyvar"
+            ("TYVAR" T SMLIdentifiers.tyvar) X
             ("numeric_label" T SMLIdentifiers.numericLabel) X // 1, 2, 3, ...
-            ("alphanumeric_id" T SMLIdentifiers.alphanumericId) X
-            ("symbolic_id" T SMLIdentifiers.symbolicId)
+            ("ID" T (SMLIdentifiers.alphanumericId X SMLIdentifiers.symbolicId))
 
-    private val whitespace: RegularExpression = "whitespace" T SMLReservedWords.ws.P()
-    private val newline: RegularExpression = "newline" T (CHAR('\n') X "\\r\\n").P()
+    private val whitespace: RegularExpression = "WS" T SMLReservedWords.ws.P()
+    private val newline: RegularExpression = "NL" T (CHAR('\n') X "\\r\\n").P()
 
     /**
      * The complete SML lexer specification as a single regular expression.

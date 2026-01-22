@@ -27,38 +27,38 @@ sealed interface SMLTokenType {
     enum class ReservedWord(
         override val displayName: String,
     ) : SMLTokenType {
-        ABSTYPE("abstype"),
-        AND("and"),
-        ANDALSO("andalso"),
-        AS("as"),
-        CASE("case"),
-        DATATYPE("datatype"),
-        DO("do"),
-        ELSE("else"),
-        END("end"),
-        EXCEPTION("exception"),
-        FN("fn"),
-        FUN("fun"),
-        HANDLE("handle"),
-        IF("if"),
-        IN("in"),
-        INFIX("infix"),
-        INFIXR("infixr"),
-        LET("let"),
-        LOCAL("local"),
-        NONFIX("nonfix"),
-        OF("of"),
-        OP("op"),
-        OPEN("open"),
-        ORELSE("orelse"),
-        RAISE("raise"),
-        REC("rec"),
-        THEN("then"),
-        TYPE("type"),
-        VAL("val"),
-        WITH("with"),
-        WITHTYPE("withtype"),
-        WHILE("while"),
+        ABSTYPE("ABSTYPE"),
+        AND("AND"),
+        ANDALSO("ANDALSO"),
+        AS("AS"),
+        CASE("CASE"),
+        DATATYPE("DATATYPE"),
+        DO("DO"),
+        ELSE("ELSE"),
+        END("END"),
+        EXCEPTION("EXCEPTION"),
+        FN("FN"),
+        FUN("FUN"),
+        HANDLE("HANDLE"),
+        IF("IF"),
+        IN("IN"),
+        INFIX("INFIX"),
+        INFIXR("INFIXR"),
+        LET("LET"),
+        LOCAL("LOCAL"),
+        NONFIX("NONFIX"),
+        OF("OF"),
+        OP("OP"),
+        OPEN("OPEN"),
+        ORELSE("ORELSE"),
+        RAISE("RAISE"),
+        REC("REC"),
+        THEN("THEN"),
+        TYPE("TYPE"),
+        VAL("VAL"),
+        WITH("WITH"),
+        WITHTYPE("WITHTYPE"),
+        WHILE("WHILE"),
         ;
 
         companion object {
@@ -94,23 +94,20 @@ sealed interface SMLTokenType {
     enum class Literal(
         override val displayName: String,
     ) : SMLTokenType {
-        INTEGER("integer"),
-        HEX_INTEGER("hex_integer"),
-        WORD("word"),
-        HEX_WORD("hex_word"),
-        REAL("real"),
-        STRING("string"),
-        CHAR("char"),
+        INTEGER("INT"),
+        WORD("WORD"),
+        REAL("REAL"),
+        STRING("STRING"),
+        CHAR("CHAR"),
     }
 
     /** Identifiers and type variables */
     enum class Identifier(
         override val displayName: String,
     ) : SMLTokenType {
-        ALPHANUMERIC_ID("alphanumeric_id"),
-        SYMBOLIC_ID("symbolic_id"),
-        TYVAR("tyvar"),
-        ETYVAR("etyvar"),
+        IDENTIFIER("ID"),
+        TYPE_IDENTIFIER("TYID"),
+        ETYPE_IDENTIFIER("TYID"),
         NUMERIC_LABEL("numeric_label"),
     }
 
@@ -118,9 +115,9 @@ sealed interface SMLTokenType {
     enum class Trivia(
         override val displayName: String,
     ) : SMLTokenType {
-        WHITESPACE("whitespace"),
-        NEWLINE("newline"),
-        COMMENT("comment"),
+        WHITESPACE("WS"),
+        NEWLINE("NL"),
+        COMMENT("C"),
     }
 }
 
@@ -148,7 +145,11 @@ data class Token(
      * Compact string representation suitable for testing and debugging.
      * Format: TYPE(lexeme)
      */
-    fun toCompactString(): String = "${type.displayName}($lexeme)"
+    fun toCompactString(): String {
+        if (type is SMLTokenType.Literal || type is SMLTokenType.Identifier)
+            return "${type.displayName}($lexeme)"
+        return type.displayName
+    }
 
     companion object {
         /**
@@ -170,7 +171,7 @@ value class TokenSequence(
     private val tokens: List<Token>,
 ) : List<Token> by tokens {
     /** Get tokens without trivia (whitespace, comments, newlines) */
-    fun withoutTrivia(): List<Token> = tokens.filterNot { it.type is SMLTokenType.Trivia }
+    fun withoutTrivia(): TokenSequence = TokenSequence(tokens.filterNot { it.type is SMLTokenType.Trivia })
 
     /** Render as a compact string for testing */
     fun toCompactString(): String = tokens.joinToString(" ") { it.toCompactString() }
