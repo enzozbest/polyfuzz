@@ -1,6 +1,11 @@
 plugins {
     kotlin("jvm") version "2.3.0"
     jacoco
+    application
+}
+
+application {
+    mainClass.set("bestetti.enzo.smlgen.sml.DemoKt")
 }
 
 group = "bestetti.enzo"
