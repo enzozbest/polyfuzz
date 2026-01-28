@@ -106,7 +106,7 @@ sealed interface SMLTokenType {
         override val displayName: String,
     ) : SMLTokenType {
         IDENTIFIER("ID"),
-        TYPE_IDENTIFIER("TYID"),
+        TYPE_IDENTIFIER("TYVAR"),
         ETYPE_IDENTIFIER("TYID"),
         NUMERIC_LABEL("numeric_label"),
     }
