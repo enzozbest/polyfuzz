@@ -1,11 +1,6 @@
 plugins {
     kotlin("jvm") version "2.3.0"
     jacoco
-    application
-}
-
-application {
-    mainClass.set("bestetti.enzo.smlgen.sml.DemoKt")
 }
 
 group = "bestetti.enzo"
@@ -41,6 +36,7 @@ tasks.withType<JacocoReport>().configureEach {
         classDirectories.files.map { file ->
             fileTree(file) {
                 exclude("**/*\$DefaultImpls.class")
+                exclude("**/DemoKt.class")  // Exclude Demo.kt main function from coverage
             }
         }
     )
