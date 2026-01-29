@@ -135,7 +135,7 @@ class SMLTokenTest {
         assertEquals("ID(myVar)", idToken.toCompactString())
 
         val tyidToken = Token(SMLTokenType.Identifier.TYPE_IDENTIFIER, "'a", 0)
-        assertEquals("TYID('a)", tyidToken.toCompactString())
+        assertEquals("TYVAR('a)", tyidToken.toCompactString())
     }
 
     @Test

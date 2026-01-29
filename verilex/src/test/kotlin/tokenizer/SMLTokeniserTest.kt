@@ -243,15 +243,6 @@ class SMLTokeniserTest {
     }
 
     @Test
-    fun testTypeVariableError() {
-        // Type variables use tags like "TYVAR" which are not in the SMLTokenType map
-        // This demonstrates the current behavior where type variables cause errors
-        assertThrows(TokenisationError::class.java) {
-            SMLTokeniser.tokenise("'a")
-        }
-    }
-
-    @Test
     fun testEqualityTypeVariableError() {
         // Equality type variables use tags like "ETYVAR" which are not in the SMLTokenType map
         assertThrows(TokenisationError::class.java) {
