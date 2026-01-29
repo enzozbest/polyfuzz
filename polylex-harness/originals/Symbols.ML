@@ -244,11 +244,11 @@ struct
             (* Tokens with payload *)
             Ident         => "ID(" ^ text ^ ")"
             | TypeIdent     => "TYVAR(" ^ text ^ ")"
-            | StringConst   => "STRING(" ^ text ^ ")"
+            | StringConst   => "STRING(" ^ "\"" ^ text ^ "\"" ^ ")"
             | IntegerConst  => "INT(" ^ text ^ ")"
             | RealConst     => "REAL(" ^ text ^ ")"
             | WordConst     => "WORD(" ^ text ^ ")"
-            | CharConst     => "CHAR(" ^ text ^ ")"
+            | CharConst     => "CHAR(#" ^ "\"" ^ text ^ "\"" ^ ")"
             (* Keywords *)
             | AbstypeSy     => "ABSTYPE"
             | AndSy         => "AND"
