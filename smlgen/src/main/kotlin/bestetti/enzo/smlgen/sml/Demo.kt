@@ -3,6 +3,9 @@ package bestetti.enzo.smlgen.sml
 import bestetti.enzo.smlgen.sml.generator.ProgramComplexity
 import bestetti.enzo.smlgen.sml.generator.ProgramConfig
 import bestetti.enzo.smlgen.sml.generator.SmlProgramGenerator
+import kotlin.io.path.Path
+import kotlin.io.path.createParentDirectories
+import kotlin.io.path.writeText
 import kotlin.random.Random
 
 /**
@@ -42,10 +45,19 @@ fun main() {
     println("\n" + "=".repeat(60))
     println("Test Suite Generation")
     println("=".repeat(60))
+    //generateSuiteFiles(10)
 
-    val testSuite = SmlProgramGenerator.generateTestSuite(count = 10, maxLength = 300, seed = Random.nextLong())
-    testSuite.forEachIndexed { i, prog ->
-        println("\nProgram ${i + 1} (${prog.length} chars):")
-        println(prog)
+}
+
+fun generateSuiteFiles(cycles: Int = 10, path: String = "../polylex-harness/afl/corpus/") {
+    for (i in 0 until cycles) {
+        val seed = Random.nextLong()
+        val testSuite = SmlProgramGenerator.generateTestSuite(count = 10, maxLength = 300, seed = seed)
+        testSuite.forEachIndexed { j, prog ->
+            val fileName = "Program_${j + 1}_${prog.length}_$seed.sml"
+            val file = Path("$path/$fileName")
+            file.createParentDirectories()
+            file.writeText(prog)
+        }
     }
 }
