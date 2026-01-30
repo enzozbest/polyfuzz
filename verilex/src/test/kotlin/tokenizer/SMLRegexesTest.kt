@@ -85,7 +85,6 @@ class SMLRegexesTest {
         assertNotNull(SMLIdentifiers.alphanumericId)
         assertNotNull(SMLIdentifiers.symbolicId)
         assertNotNull(SMLIdentifiers.identifier)
-        assertNotNull(SMLIdentifiers.etyvar)
         assertNotNull(SMLIdentifiers.tyvar)
         assertNotNull(SMLIdentifiers.numericLabel)
     }
@@ -183,16 +182,6 @@ class SMLRegexesTest {
         val pattern = ("tyvar" T SMLIdentifiers.tyvar).toCharFunctionFormat()
         val result = Verilex.lex(pattern, "'a")
         assertEquals(listOf("tyvar" to "'a"), result)
-    }
-
-    @Test
-    fun testEtyvarMatches() {
-        val pattern = ("etyvar" T SMLIdentifiers.etyvar).toCharFunctionFormat()
-        val result = Verilex.lex(pattern, "''a")
-        assertEquals(listOf("etyvar" to "''a"), result)
-
-        val result2 = Verilex.lex(pattern, "'''abc")
-        assertEquals(listOf("etyvar" to "'''abc"), result2)
     }
 
     @Test

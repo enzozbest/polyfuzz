@@ -74,9 +74,6 @@ class SMLTokenTest {
     @Test
     fun testSMLTokenTypeFromTagIdentifiers() {
         assertEquals(SMLTokenType.Identifier.IDENTIFIER, SMLTokenType.fromTag("ID"))
-        // Both TYPE_IDENTIFIER and ETYPE_IDENTIFIER have displayName "TYID"
-        // The later one (ETYPE_IDENTIFIER) wins in the map
-        assertEquals(SMLTokenType.Identifier.ETYPE_IDENTIFIER, SMLTokenType.fromTag("TYID"))
         assertEquals(SMLTokenType.Identifier.NUMERIC_LABEL, SMLTokenType.fromTag("numeric_label"))
     }
 

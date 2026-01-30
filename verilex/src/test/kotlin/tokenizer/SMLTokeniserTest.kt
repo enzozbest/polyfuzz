@@ -243,14 +243,6 @@ class SMLTokeniserTest {
     }
 
     @Test
-    fun testEqualityTypeVariableError() {
-        // Equality type variables use tags like "ETYVAR" which are not in the SMLTokenType map
-        assertThrows(TokenisationError::class.java) {
-            SMLTokeniser.tokenise("''a")
-        }
-    }
-
-    @Test
     fun testNumericLabel() {
         val result = SMLTokeniser.tokenise("1")
         assertEquals(1, result.size)

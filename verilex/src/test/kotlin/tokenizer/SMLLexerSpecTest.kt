@@ -136,7 +136,7 @@ class SMLLexerSpecTest {
     @Test
     fun testLexerMatchesEqualityTypeVariables() {
         val result = Verilex.lex(SMLLexerSpec.lexer, "''a")
-        assertTrue(result[0].first == "ETYVAR")
+        assertTrue(result[0].first == "TYVAR")
     }
 
     @Test
