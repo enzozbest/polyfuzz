@@ -78,10 +78,9 @@ object SMLLexerSpec {
             ("CHAR" T SMLStrings.char)
 
     private val identifiers =
-        ("ETYVAR" T SMLIdentifiers.etyvar) X // Must come before "tyvar"
             ("TYVAR" T SMLIdentifiers.tyvar) X
             ("numeric_label" T SMLIdentifiers.numericLabel) X // 1, 2, 3, ...
-            ("ID" T (SMLIdentifiers.alphanumericId X SMLIdentifiers.symbolicId))
+            ("ID" T (SMLIdentifiers.alphanumericId X SMLIdentifiers.qualifiedId X SMLIdentifiers.symbolicId))
 
     private val whitespace: RegularExpression = "WS" T SMLReservedWords.ws.P()
     private val newline: RegularExpression = "NL" T (CHAR('\n') X "\\r\\n").P()

@@ -116,17 +116,24 @@ object SMLIdentifiers {
      */
     val alphanumericId = letter F alphanumeric.S()
 
+    /**
+     * Qualified identifier: chain of alphanumeric identifiers separated by '.'.
+     */
+    val qualifiedId = alphanumericId F ("." F alphanumericId).P()
+
     /** Symbolic identifier: one or more symbolic characters */
     val symbolicId = symbolic.P()
 
     /** Any identifier (alphanumeric or symbolic) */
     val identifier = alphanumericId X symbolicId
 
-    /** Equality type variable (EtyVar): alphanumeric identifier starting with two or more primes */
-    val etyvar = prime F prime.P() F alphanumeric.S()
-
-    /** Type variable (TyVar): alphanumeric identifier starting with a prime */
-    val tyvar = prime F alphanumericId
+    /** Type variable (TyVar): alphanumeric identifier starting with a prime
+     *
+     * Note: this version is NOT in accordance with the Definition of SML. Strictly speaking, identifiers starting
+     * with '' are of the class Equality Type Variable (EtyVar). However, PolyML does not differentiate between them,
+     * and we will allow that as a trivial deviation. We do not want to reject inputs on that basis.
+     */
+    val tyvar = prime F ((ONE X prime) F alphanumericId)
 
     /** Numeric label: any numeral not starting with 0 (for record labels) */
     private val nonZeroDigit = RANGE(('1'..'9').toSet())

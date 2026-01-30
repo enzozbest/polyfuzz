@@ -107,7 +107,6 @@ sealed interface SMLTokenType {
     ) : SMLTokenType {
         IDENTIFIER("ID"),
         TYPE_IDENTIFIER("TYVAR"),
-        ETYPE_IDENTIFIER("TYID"),
         NUMERIC_LABEL("numeric_label"),
     }
 
