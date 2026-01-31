@@ -88,6 +88,7 @@ sealed interface SMLTokenType {
         DOUBLE_ARROW("=>"),
         ARROW("->"),
         HASH("#"),
+        ASTERISK("*"),
     }
 
     /** Literal constants */

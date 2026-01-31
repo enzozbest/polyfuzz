@@ -142,6 +142,7 @@ object SMLIdentifiers {
 
 object SMLTokenHelpers {
     val optionalSign = ONE X CHAR('~')
+    val asterisk = CHAR('*')
     val decimalDigit = RANGE(('0'..'9').toSet())
     val hexDigit = RANGE(('0'..'9').toSet() + ('A'..'F') + ('a'..'f'))
     val exponent by lazy { (CHAR('E') X CHAR('e')) F SMLConstants.decimalInteger }
