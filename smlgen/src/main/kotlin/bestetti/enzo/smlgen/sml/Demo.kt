@@ -46,7 +46,15 @@ fun main() {
     println("Test Suite Generation")
     println("=".repeat(60))
     //generateSuiteFiles(10)
+    generateTestPrograms()
+}
 
+fun generateTestPrograms(cnt: Int = 10, maxLen: Int = 300, seed: Long = Random.nextLong()) {
+    val testSuite = SmlProgramGenerator.generateTestSuite(count = cnt, maxLength = maxLen, seed = seed)
+    testSuite.forEachIndexed { i, program ->
+        println("Program $i (${program.length} chars):")
+        println(program)
+    }
 }
 
 fun generateSuiteFiles(cycles: Int = 10, path: String = "../polylex-harness/afl/corpus/") {
