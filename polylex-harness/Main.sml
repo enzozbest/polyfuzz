@@ -1,6 +1,23 @@
 (* Main.sml - Lexer harness for fuzzing *)
 (* Reads input from stdin, tokenises it, outputs tokens to stdout *)
 
+structure AflFfi =
+struct
+    (* External symbols *)
+    val setupSym = Foreign.externalFunctionSymbol "setup"
+    val traceSym = Foreign.externalFunctionSymbol "trace"
+    val resetSym = Foreign.externalFunctionSymbol "reset"
+
+    val setup : unit -> unit =
+        Foreign.buildCall0 (setupSym, (), Foreign.cVoid)
+
+    val trace : int -> unit =
+        Foreign.buildCall1 (traceSym, Foreign.cInt, Foreign.cVoid)
+
+    val reset : unit -> unit =
+        Foreign.buildCall0 (resetSym, (), Foreign.cVoid)
+end;
+
 structure Main =
 struct
     (* Create lexer parameters with a simple error handler *)
@@ -65,47 +82,22 @@ struct
         collect []
     end
 
-    (* Main entry point *)
+    (* Main entry point — reads from stdin, runs lexer *)
     fun main () =
     let
-        (* Parse arguments: [input] or [input, output] *)
-        val args = CommandLine.arguments()
-        val (input, outStream, closeOut) =
-            case args of
-                [infile] =>
-                    let
-                        val inStream = TextIO.openIn infile
-                        val content = TextIO.inputAll inStream
-                        val () = TextIO.closeIn inStream
-                    in
-                        (content, TextIO.stdOut, false)
-                    end
-              | [infile, outfile] =>
-                    let
-                        val inStream = TextIO.openIn infile
-                        val content = TextIO.inputAll inStream
-                        val () = TextIO.closeIn inStream
-                    in
-                        (content, TextIO.openOut outfile, true)
-                    end
-              | [] => (TextIO.inputAll TextIO.stdIn, TextIO.stdOut, false)
-              | _ => (TextIO.output(TextIO.stdErr, "Usage: sml-lexer [input [output]]\n");
-                      OS.Process.exit OS.Process.failure)
+        (* Initialise AFL shared memory *)
+        val () = AflFfi.setup ()
 
-        (* Tokenise *)
-        val tokens = tokenise input
+        (* Read all input from stdin *)
+        val input = TextIO.inputAll TextIO.stdIn
 
-        (* Output each token on its own line *)
-        fun outputToken (sym, text) =
-            TextIO.output(outStream, Symbols.tokenToString(sym, text) ^ " ")
+        (* Reset coverage tracking *)
+        val () = AflFfi.reset ()
+
+        (* Run the lexer *)
+        val _ = tokenise input
     in
-        List.app outputToken tokens;
-        if closeOut then TextIO.closeOut outStream else ();
-        OS.Process.exit OS.Process.success
+        ()
     end
-    handle e => (
-      TextIO.output(TextIO.stdErr, "Fatal: " ^ exnMessage e ^ "\n");
-        OS.Process.exit OS.Process.failure
-    )
+    handle _ => ()  (* Catch everything — fuzz input WILL be malformed *)
 end;
-(* Entry point - called by exported executable or manually *)

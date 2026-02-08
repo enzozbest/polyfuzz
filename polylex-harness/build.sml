@@ -34,8 +34,23 @@ use "originals/Debug.ML";
 val () = print "Loading originals/LEXSIG.sml...\n";
 use "originals/LEXSIG.sml";
 
-val () = print "Loading originals/LEX_.ML...\n";
-use "originals/LEX_.ML";
+
+(* AFL coverage trace *)
+val aflTrace : int -> unit =
+    let val f = ref NONE
+    in fn id =>
+        case !f of
+            SOME func => func id
+        |   NONE =>
+            let val func = Foreign.buildCall1
+                    (Foreign.externalFunctionSymbol "trace",
+                     Foreign.cInt, Foreign.cVoid)
+            in f := SOME func; func id end
+            handle _ => ()
+    end;
+
+val () = print "Loading LEX_.ML...\n";
+use "LEX_.ML";
 
 val () = print "Loading originals/Lex.ML...\n";
 use "originals/Lex.ML";
@@ -46,9 +61,12 @@ val () = print "\n=== All modules loaded successfully! ===\n\n";
 val () = print "Loading Main.sml...\n";
 use "Main.sml";
 
-(* Export to standalone executable *)
-val () = print "Exporting executable as 'sml-lexer'...\n";
-PolyML.export("polylex", Main.main);
+(* Export *)
+val () = print "Exporting executable as 'polylex_fuzz'...\n";
+PolyML.export("polylex_fuzz", Main.main);
 
 val () = print "\nExport complete!\n";
-val () = print "Link with: cc -o polylex polylex.o -L/usr/local/lib -Wl,-rpath,/usr/local/lib -lpolymain -lpolyml\n";
+val () = print "Now compile and link:\n";
+val () = print "  afl-clang-fast -c polylex_c_shim.c -o polylex_c_shim.o\n";
+val () = print "  afl-clang-fast -o polylex_fuzz polylex_fuzz.o polylex_c_shim.o \\\n";
+val () = print "      -L/usr/local/lib -Wl,-rpath,/usr/local/lib -lpolymain -lpolyml\n";
