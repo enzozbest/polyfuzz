@@ -40,13 +40,13 @@ echo 'val x = 42' | ./polylex_fuzz
 Alternatively, you can also use an input file (output goes to stdout):
 
 ```bash
-./polylex input.sml
+./polylex_fuzz input.sml
 ```
 
 Or, you can use both an input and output file (reads from input.sml and writes to output.txt):
 
 ```bash
-./polylex input.sml output.txt
+./polylex_fuzz input.sml output.txt
 ```
 
 The main use case expected, however, is to use this with AFL. For that, you can use the following command:
