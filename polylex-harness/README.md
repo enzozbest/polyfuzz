@@ -1,46 +1,58 @@
-# PolyML Lexer (Lifted from the compiler)
+# PolyLex - Instrumented for AFL Fuzzing
 
 A standalone lexer using the **original PolyML lexer code**, designed for 
-differential testing against a verified oracle.
+differential testing against a verified oracle. This repository provides the instrumented version of polylex for use with AFL 
 
 ## Quick Start
 ### 1. Install PolyML
 The lexer wrapper is written in Standard ML and needs to be compiled with PolyML itself. That guarantees that the lexer files are compiled exactly as in the main compiler and increases confidence in any testing effort.
 
-### 2. Build lexer Executable
+### 2. Making the binaries
+You can compile everything and be ready to go with:
 
 ```bash
-polyc build.sml
-cc -o polylex polylex.o -lpolymain -lpolyml
-```
-In case the linker fails, it may be because the PolyML libraries are in some non-standard location. Find them with:
-
-```bash
-find /usr -name "libpolyml*" 2>/dev/null
+make
 ```
 
-and then link with the explicit path:
+You can also compile individual components:
 ```bash
-cc -o polylex polylex.o -L/<that path> -Wl,-rpath,<that path> -lpolymain -lpolyml
+make lexer
 ```
+will build polylex
+
+```bash
+make shim
+```
+will build the C shim used to instrument polylex
+
+```bash
+make link
+```
+will link the object files into the executable polylex_fuzz.
 
 ### 4. Using:
-You can directly input a string and the output will go to stdout:
+You can use polylex_fuzz directly as with polylex. For example, input a string and the output will go to stdout:
 
 ```bash
-echo 'val x = 42' | ./polylex
+echo 'val x = 42' | ./polylex_fuzz
 ```
 
 Alternatively, you can also use an input file (output goes to stdout):
 
 ```bash
-./polylex input.sml
+./polylex_fuzz input.sml
 ```
 
 Or, you can use both an input and output file (reads from input.sml and writes to output.txt):
 
 ```bash
-./polylex input.sml output.txt
+./polylex_fuzz input.sml output.txt
+```
+
+The main use case expected, however, is to use this with AFL. For that, you can use the following command:
+
+```bash
+afl-fuzz -i <input_corpus> -o <output_corpus> -- ./polylex_fuzz @
 ```
 
 ## Directory Structure
@@ -55,14 +67,18 @@ polylex/
 │   ├── DEBUG.sig       # Debug parameters signature
 │   ├── Debug.ML        # Debug parameters
 │   ├── LEXSIG.sml      # Lexer signature
-│   ├── LEX_.ML         # THE LEXER
+│   ├── LEX_.ML         # THE ORIGINAL LEXER
 │   └── Lex.ML          # Functor instantiation
 ├── stubs/              # Simplified replacements for PolyML internals
 │   ├── PRETTY.sig      # Pretty printing signature
 │   └── Pretty.sml      # Pretty printing (simplified)
 ├── Main.sml            # Wrapper to call the lexer on inputs
 ├── build.sml           # Build script
+├── polylex_c_shim.c    # C shim for AFL fuzzing
+├── LEX_.ML             # The instrumented lexer
+├── Makefile            # For make
 └── README.md
+
 ```
 
 ## Why Stubs?
