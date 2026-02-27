@@ -1,10 +1,15 @@
 plugins {
     kotlin("jvm") version "2.3.0"
+    application
     jacoco
 }
 
 group = "bestetti.enzo"
 version = "1.0-SNAPSHOT"
+
+application {
+    mainClass.set("bestetti.enzo.smlgen.sml.cli.MainKt")
+}
 
 repositories {
     mavenCentral()
@@ -36,7 +41,7 @@ tasks.withType<JacocoReport>().configureEach {
         classDirectories.files.map { file ->
             fileTree(file) {
                 exclude("**/*\$DefaultImpls.class")
-                exclude("**/DemoKt.class")  // Exclude Demo.kt main function from coverage
+                exclude("**/smlgen/MainKt.class")  // Exclude CLI entry point from coverage
             }
         }
     )

@@ -1,22 +1,28 @@
 # SMLGen
 
-A Standard ML program generator written in Kotlin. SMLGen produces syntactically valid SML '97 programs at configurable complexity levels, designed for building test corpora for compiler and interpreter testing, fuzz testing, and property-based testing.
+A Standard ML program generator written in Kotlin. SMLGen produces syntactically valid SML '97 programs at configurable
+complexity levels, designed for building test corpora for compiler and interpreter testing, fuzz testing, and
+property-based testing.
 
 Part of the [PolyFuzz](https://github.com/enzozbest/polyfuzz) project.
 
 ## Overview
 
-SMLGen uses a compositional generator framework where complex SML programs are constructed from smaller generator combinators that mirror the SML grammar. Generators can be combined using sequencing (`F`), choice (`X`), weighted selection, depth-controlled recursion, and other standard combinators. The framework maintains grammar constraints while exploring the breadth of SML's syntax, covering expressions, declarations, types, patterns, functions, exceptions, and edge cases.
+SMLGen uses a compositional generator framework where complex SML programs are constructed from smaller generator
+combinators that mirror the SML grammar. Generators can be combined using sequencing (`F`), choice (`X`), weighted
+selection, depth-controlled recursion, and other standard combinators. The framework maintains grammar constraints while
+exploring the breadth of SML's syntax, covering expressions, declarations, types, patterns, functions, exceptions, and
+edge cases.
 
 Programs are generated at five complexity levels, each controlling recursion depth and repetition:
 
-| Level | Max Depth | Max Repeat | Description |
-|---|---|---|---|
-| `MINIMAL` | 2 | 1 | Single declarations, simple expressions |
-| `SIMPLE` | 3 | 2 | Few declarations, basic expressions |
-| `MEDIUM` | 5 | 3 | Moderate nesting, variety of constructs |
-| `COMPLEX` | 7 | 4 | Deep nesting, advanced features |
-| `EXTREME` | 10 | 5 | Maximum nesting, edge cases, obscure features |
+| Level     | Max Depth | Max Repeat | Description                                   |
+|-----------|-----------|------------|-----------------------------------------------|
+| `MINIMAL` | 2         | 1          | Single declarations, simple expressions       |
+| `SIMPLE`  | 3         | 2          | Few declarations, basic expressions           |
+| `MEDIUM`  | 5         | 3          | Moderate nesting, variety of constructs       |
+| `COMPLEX` | 7         | 4          | Deep nesting, advanced features               |
+| `EXTREME` | 10        | 5          | Maximum nesting, edge cases, obscure features |
 
 A `MIXED` mode cycles through all five levels, useful for generating diverse test corpora.
 
@@ -112,7 +118,8 @@ open build/reports/jacoco/test/html/index.html
 
 ## Generator Framework
 
-The generator framework is generic and reusable. At its core, a `Generator` is a function `(GenerationContext) -> String` with combinator operators:
+The generator framework is generic and reusable. At its core, a `Generator` is a function
+`(GenerationContext) -> String` with combinator operators:
 
 ```kotlin
 // Sequence: generate A followed by B
@@ -133,6 +140,3 @@ lazy { recursiveGen }                       // Deferred evaluation for recursion
 
 The `GenerationContext` tracks recursion depth and provides a seeded `Random` instance for reproducible output.
 
-## License
-
-See the [PolyFuzz](https://github.com/enzozbest/polyfuzz) repository for license details.

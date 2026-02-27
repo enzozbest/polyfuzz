@@ -296,6 +296,38 @@ class SmlProgramGeneratorTest {
     }
 
     @Test
+    fun `generate falls back to minimal when all attempts exceed maxLength`() {
+        // maxLength=1 with MINIMAL complexity forces the MINIMAL->break branch
+        // and the fallback path at the end of generate()
+        repeat(10) { i ->
+            val program = SmlProgramGenerator.generate(
+                ProgramConfig(
+                    maxLength = 1,
+                    complexity = ProgramComplexity.MINIMAL,
+                    seed = i.toLong()
+                )
+            )
+            assertTrue(program.isNotEmpty(), "Fallback should still produce a program")
+        }
+    }
+
+    @Test
+    fun `generate reduces complexity before falling back`() {
+        // Start at EXTREME with maxLength=1 to force the full reduction chain:
+        // EXTREME -> COMPLEX -> MEDIUM -> SIMPLE -> MINIMAL -> break -> fallback
+        repeat(5) { i ->
+            val program = SmlProgramGenerator.generate(
+                ProgramConfig(
+                    maxLength = 1,
+                    complexity = ProgramComplexity.EXTREME,
+                    seed = i.toLong()
+                )
+            )
+            assertTrue(program.isNotEmpty(), "Fallback should produce a program after full reduction")
+        }
+    }
+
+    @Test
     fun `very small max length still produces something`() {
         val smallLengths = listOf(5, 10, 15, 20)
         for (maxLength in smallLengths) {
