@@ -123,4 +123,14 @@ class ReportWriterTest {
         assertTrue(nonExistentDir.exists(), "Expected output directory to be created")
         assertTrue(File(nonExistentDir, "test.json").exists(), "Expected JSON file to be created in new directory")
     }
+
+    @Test
+    fun `writeAll with empty results list produces no files`() {
+        val outputDir = createTempDirectory("report-empty-test").toFile()
+
+        ReportWriter.writeAll(emptyList(), outputDir)
+
+        val files = outputDir.listFiles() ?: emptyArray()
+        assertEquals(0, files.size, "Expected no JSON files for empty results")
+    }
 }

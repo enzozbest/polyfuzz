@@ -53,7 +53,7 @@ object BatchOrchestrator {
                     ComparisonEngine.compare(oracleResult.tokenStream, polylexResult.tokenStream)
                 )
             else ->
-                BatchFileResult.Failure(file, "unexpected result combination")
+                BatchFileResult.Failure(file, "unexpected result combination") //Logically unreachable due to sealed class, but required for exhaustiveness
         }
     }
 }

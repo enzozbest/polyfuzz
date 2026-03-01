@@ -118,4 +118,20 @@ class ConsoleSummaryTest {
         assertTrue(joined.contains("crashed.sml"), "Expected failure file name in output, got:\n$joined")
         assertTrue(joined.contains("lexer crashed"), "Expected error message in output, got:\n$joined")
     }
+
+    @Test
+    fun `prints summary with all zeros for empty results`() {
+        val output = mutableListOf<String>()
+
+        ConsoleSummary.print(emptyList(), output::add)
+
+        val joined = output.joinToString("\n")
+        assertTrue(joined.contains("Total files processed : 0"), "Expected 0 total files, got:\n$joined")
+        assertTrue(joined.contains("Matching            : 0"), "Expected 0 matches, got:\n$joined")
+        assertTrue(joined.contains("Mismatching         : 0"), "Expected 0 mismatches, got:\n$joined")
+        assertTrue(joined.contains("Failures            : 0"), "Expected 0 failures, got:\n$joined")
+        assertTrue(joined.contains("Total mismatches    : 0"), "Expected 0 total mismatches, got:\n$joined")
+        assertFalse(joined.contains("Per-File"), "Should not print per-file details for empty results")
+        assertFalse(joined.contains("=== Failures ==="), "Should not print failures section for empty results")
+    }
 }
