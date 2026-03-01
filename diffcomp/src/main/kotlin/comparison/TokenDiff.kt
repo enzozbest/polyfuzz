@@ -124,6 +124,15 @@ fun parseCompactToken(token: String): CompactToken {
 
 /**
  * Standard DP LCS returning matched index pairs (oracleIndex, polylexIndex).
+ *
+ * The runtime complexity of this algorithm is O(n + m*k), which degrades to O(n^2) in the worst case
+ * (n is the length of the string (including spaces), m is the oracle's token count, and k is polylex's token count).
+ * Therefore, this function is only called when we know the strings differ.
+ *
+ * @param a List of compact token strings from oracle (normalised for REAL exponent case)
+ * @param b List of compact token strings from polylex (normalised for REAL exponent case)
+ * @return List of matched index pairs (oracleIndex, polylexIndex) representing the longest common subsequence
+ * of tokens between a and b.
  */
 fun lcs(a: List<String>, b: List<String>): List<Pair<Int, Int>> {
     val rows = a.size

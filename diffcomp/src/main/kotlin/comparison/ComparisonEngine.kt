@@ -13,8 +13,8 @@ object ComparisonEngine {
         val normalisedOracle = normaliseRealExponents(oracleStream)
         val normalisedPolylex = normaliseRealExponents(polylexStream)
 
-        //Hash-first short-circuit: O(1) comparison for identical streams, which is the majority of cases.
-        if (Hasher.equal(normalisedOracle, normalisedPolylex)) return ComparisonResult.Match
+        //Short-circuit: O(n) comparison for identical streams, which is the majority of cases.
+        if (normalisedOracle == normalisedPolylex) return ComparisonResult.Match
 
         val oracleTokens = normalisedOracle.toTokenList()
         val polylexTokens = normalisedPolylex.toTokenList()
