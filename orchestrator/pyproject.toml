@@ -1,0 +1,36 @@
+[project]
+name = "polyfuzz-orchestrator"
+version = "0.1.0"
+description = "End-to-end orchestration for PolyFuzz differential testing"
+readme = "README.md"
+authors = [
+    { name = "Enzo Zuanazi Bestetti", email = "enzobestetti3@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.3",
+    "rich>=14.0",
+    "scipy>=1.17.1",
+    "scipy-stubs~=1.17.1",
+]
+
+[project.scripts]
+polyfuzz = "polyfuzz_orchestrator.cli:main"
+
+[tool.uv]
+dev-dependencies = ["pytest>=9.0", "pytest-subprocess", "ruff>=0.15", "mypy>=1.19"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "TCH"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
