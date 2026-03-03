@@ -94,8 +94,11 @@ struct
         (* Reset coverage tracking *)
         val () = AflFfi.reset ()
 
-        (* Run the lexer *)
-        val _ = tokenise input
+        (* Run the lexer and output tokens to stdout *)
+        val tokens = tokenise input
+        val () = List.app (fn (tok, text) =>
+            print (Symbols.tokenToString(tok, text) ^ " ")) tokens
+        val () = print "\n"
     in
         ()
     end
