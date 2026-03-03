@@ -1,0 +1,6 @@
+[submodule "smlgen"]
+	path = smlgen
+	url = https://github.com/enzozbest/smlgen.git
+[submodule "verilex"]
+	path = verilex
+	url = https://github.com/enzozbest/verilex.git
