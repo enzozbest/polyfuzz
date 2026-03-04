@@ -75,22 +75,15 @@ class ProcessRunner:
 def verify_components(config: PipelineConfig) -> list[str]:
     """Check all pipeline components exist and are executable.
 
-    For JARs: checks Path.exists().
-    For binaries: checks Path.exists() and os.access(X_OK).
-    Also checks that 'java' is available via shutil.which.
+    For each component: checks Path.exists() and os.access(X_OK).
+    Also checks that 'java' is available via shutil.which (required for diffcomp).
 
     Returns list of error strings (empty = all good).
     """
     errors: list[str] = []
 
-    jar_checks = [
-        (config.smlgen_jar, "smlgen JAR"),
-    ]
-    for path, label in jar_checks:
-        if not path.exists():
-            errors.append(f"{label} not found at {path}")
-
     bin_checks = [
+        (config.smlgen_bin, "smlgen binary"),
         (config.polylex_bin, "polylex binary"),
         (config.afl_fuzz_bin, "afl-fuzz binary"),
         (config.diffcomp_bin, "diffcomp binary"),
@@ -102,6 +95,6 @@ def verify_components(config: PipelineConfig) -> list[str]:
             errors.append(f"{label} at {path} is not executable")
 
     if shutil.which("java") is None:
-        errors.append("java not found on PATH (required for smlgen and diffcomp)")
+        errors.append("java not found on PATH (required for diffcomp)")
 
     return errors

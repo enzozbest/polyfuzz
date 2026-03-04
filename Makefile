@@ -18,7 +18,7 @@ build-diffcomp:
 	cd diffcomp && ./gradlew installDist
 
 build-orchestrator:
-	cd orchestrator && uv sync
+	cd orchestrator && uv sync && source .venv/bin/activate
 
 test:
 	cd orchestrator && uv run pytest

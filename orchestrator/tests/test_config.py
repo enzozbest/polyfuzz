@@ -90,13 +90,13 @@ class TestLoadConfig:
         """load_config converts path strings from TOML to Path objects."""
         toml_file = tmp_path / "polyfuzz.toml"
         toml_file.write_text(
-            '[polyfuzz]\nsmlgen_jar = "custom/path/smlgen.jar"\n'
+            '[polyfuzz]\nsmlgen_bin = "custom/path/smlgen.jar"\n'
         )
 
         config = load_config(toml_path=toml_file, work_dir=tmp_path)
 
-        assert isinstance(config.smlgen_jar, Path)
-        assert config.smlgen_jar == Path("custom/path/smlgen.jar")
+        assert isinstance(config.smlgen_bin, Path)
+        assert config.smlgen_bin == Path("custom/path/smlgen.jar")
 
 
 class TestTomlCliEquivalence:

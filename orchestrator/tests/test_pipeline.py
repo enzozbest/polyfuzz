@@ -21,7 +21,7 @@ def _make_config(tmp_path: Path, **overrides) -> PipelineConfig:
     """Create a PipelineConfig with sensible test defaults rooted in tmp_path."""
     defaults = {
         "work_dir": tmp_path,
-        "smlgen_jar": tmp_path / "smlgen.jar",
+        "smlgen_bin": tmp_path / "smlgen_bin",
         "polylex_bin": tmp_path / "polylex_fuzz",
         "diffcomp_bin": tmp_path / "diffcomp",
         "afl_fuzz_bin": tmp_path / "afl-fuzz",

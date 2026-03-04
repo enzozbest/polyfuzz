@@ -20,7 +20,7 @@ def _make_config(tmp_path: Path, **overrides) -> PipelineConfig:
     """Create a PipelineConfig with sensible test defaults rooted in tmp_path."""
     defaults = {
         "work_dir": tmp_path,
-        "smlgen_jar": tmp_path / "smlgen.jar",
+        "smlgen_bin": tmp_path / "smlgen_bin",
         "polylex_bin": tmp_path / "polylex_fuzz",
         "diffcomp_bin": tmp_path / "diffcomp",
         "afl_fuzz_bin": tmp_path / "afl-fuzz",
@@ -118,33 +118,33 @@ class TestStageABC:
 class TestSmlgenStage:
     """Tests for SmlgenStage validation and execution."""
 
-    def test_validate_raises_if_jar_missing(self, tmp_path: Path):
+    def test_validate_raises_if_binary_missing(self, tmp_path: Path):
         from polyfuzz_orchestrator.stages.smlgen import SmlgenStage
 
         config = _make_config(tmp_path)
-        # Do NOT create smlgen_jar
+        # Do NOT create smlgen_bin
         _make_campaign_dirs(tmp_path)
 
         stage = SmlgenStage()
         with pytest.raises(PreflightError):
             stage.validate(tmp_path, config)
 
-    def test_validate_passes_with_jar_present(self, tmp_path: Path):
+    def test_validate_passes_with_binary_present(self, tmp_path: Path):
         from polyfuzz_orchestrator.stages.smlgen import SmlgenStage
 
         config = _make_config(tmp_path)
-        config.smlgen_jar.write_text("fake jar")
+        _make_fake_binary(config.smlgen_bin)
         _make_campaign_dirs(tmp_path)
 
         stage = SmlgenStage()
         # Should not raise
         stage.validate(tmp_path, config)
 
-    def test_execute_calls_runner_with_correct_java_command(self, tmp_path: Path):
+    def test_execute_calls_runner_with_correct_command(self, tmp_path: Path):
         from polyfuzz_orchestrator.stages.smlgen import SmlgenStage
 
         config = _make_config(tmp_path)
-        config.smlgen_jar.write_text("fake jar")
+        _make_fake_binary(config.smlgen_bin)
         dirs = _make_campaign_dirs(tmp_path)
 
         runner = MagicMock(spec=ProcessRunner)
@@ -165,12 +165,9 @@ class TestSmlgenStage:
         runner.run.assert_called_once()
         call_args = runner.run.call_args
 
-        # Command should include java -cp, jar path, MainKt, and CLI args
+        # Command invokes the smlgen wrapper script directly with CLI args
         cmd = call_args[1]["cmd"] if "cmd" in call_args[1] else call_args[0][0]
-        assert cmd[0] == "java"
-        assert "-cp" in cmd
-        assert str(config.smlgen_jar) in cmd
-        assert "bestetti.enzo.smlgen.MainKt" in cmd
+        assert cmd[0] == str(config.smlgen_bin)
         assert "-n" in cmd
         assert str(config.tests_per_campaign) in cmd
         assert "-o" in cmd
@@ -186,7 +183,7 @@ class TestSmlgenStage:
         from polyfuzz_orchestrator.stages.smlgen import SmlgenStage
 
         config = _make_config(tmp_path, seed=42)
-        config.smlgen_jar.write_text("fake jar")
+        _make_fake_binary(config.smlgen_bin)
         _make_campaign_dirs(tmp_path)
 
         runner = MagicMock(spec=ProcessRunner)
@@ -210,7 +207,7 @@ class TestSmlgenStage:
         from polyfuzz_orchestrator.stages.smlgen import SmlgenStage
 
         config = _make_config(tmp_path, seed=None)
-        config.smlgen_jar.write_text("fake jar")
+        _make_fake_binary(config.smlgen_bin)
         _make_campaign_dirs(tmp_path)
 
         runner = MagicMock(spec=ProcessRunner)
@@ -233,7 +230,7 @@ class TestSmlgenStage:
         from polyfuzz_orchestrator.stages.smlgen import SmlgenStage
 
         config = _make_config(tmp_path)
-        config.smlgen_jar.write_text("fake jar")
+        _make_fake_binary(config.smlgen_bin)
         _make_campaign_dirs(tmp_path)
 
         runner = MagicMock(spec=ProcessRunner)

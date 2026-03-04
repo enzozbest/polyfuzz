@@ -60,8 +60,9 @@ class TestVerifyComponents:
     def test_returns_empty_list_when_all_exist(self, tmp_path: Path) -> None:
         """verify_components returns empty list when all component paths exist and are accessible."""
         # Create fake component files
-        smlgen_jar = tmp_path / "smlgen.jar"
-        smlgen_jar.touch()
+        smlgen_bin = tmp_path / "smlgen_bin"
+        smlgen_bin.touch()
+        smlgen_bin.chmod(smlgen_bin.stat().st_mode | stat.S_IEXEC)
 
         polylex_bin = tmp_path / "polylex_fuzz"
         polylex_bin.touch()
@@ -77,7 +78,7 @@ class TestVerifyComponents:
 
         config = PipelineConfig(
             work_dir=tmp_path,
-            smlgen_jar=smlgen_jar,
+            smlgen_bin=smlgen_bin,
             polylex_bin=polylex_bin,
             diffcomp_bin=diffcomp_bin,
             afl_fuzz_bin=afl_bin,
@@ -90,7 +91,7 @@ class TestVerifyComponents:
         """verify_components returns error strings for each missing component."""
         config = PipelineConfig(
             work_dir=tmp_path,
-            smlgen_jar=tmp_path / "nonexistent.jar",
+            smlgen_bin=tmp_path / "nonexistent_smlgen",
             polylex_bin=tmp_path / "nonexistent_bin",
             diffcomp_bin=tmp_path / "nonexistent_diffcomp",
             afl_fuzz_bin=tmp_path / "nonexistent_afl",
@@ -100,7 +101,7 @@ class TestVerifyComponents:
         assert len(errors) >= 4  # At least one per missing component
         # Each error should mention the component that's missing
         combined = " ".join(errors)
-        assert "smlgen" in combined.lower() or "nonexistent.jar" in combined
+        assert "smlgen" in combined.lower() or "nonexistent_smlgen" in combined
         assert "polylex" in combined.lower() or "nonexistent_bin" in combined
         assert "diffcomp" in combined.lower() or "nonexistent_diffcomp" in combined
         assert "afl" in combined.lower() or "nonexistent_afl" in combined

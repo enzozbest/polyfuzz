@@ -17,6 +17,7 @@ from polyfuzz_orchestrator.analytics.parsers import (
     parse_plot_data,
 )
 from polyfuzz_orchestrator.manifest import is_campaign_complete
+from polyfuzz_orchestrator.stages.diffcomp import DiffcompStage
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +92,15 @@ def extract_campaign_metrics(campaign_dir: Path) -> CampaignMetrics | None:
     stages = timing.get("stages", {})
     campaign_seed = manifest.get("campaign_seed", 0)
 
-    fuzzer_stats = parse_fuzzer_stats(
-        campaign_dir / "afl_output" / "default" / "fuzzer_stats"
-    )
+    # Locate AFL++ fuzzer output directory (handles both single and parallel mode)
+    queue_dir = DiffcompStage._find_queue_dir(campaign_dir)
+    if queue_dir is not None:
+        fuzzer_dir = queue_dir.parent
+    else:
+        # Fall back to conventional path for metrics even if queue is missing
+        fuzzer_dir = campaign_dir / "afl_output" / "default"
+
+    fuzzer_stats = parse_fuzzer_stats(fuzzer_dir / "fuzzer_stats")
     bitmap_cvg = float(fuzzer_stats.get("bitmap_cvg", 0.0))
     edges_found = int(fuzzer_stats.get("edges_found", 0))
 
@@ -105,16 +112,14 @@ def extract_campaign_metrics(campaign_dir: Path) -> CampaignMetrics | None:
     mismatch_rate = diff_count / total_compared if total_compared > 0 else 0.0
 
     corpus_initial = _count_files(campaign_dir / "corpus")
-    corpus_final = _count_files(campaign_dir / "afl_output" / "default" / "queue")
+    corpus_final = _count_files(queue_dir) if queue_dir is not None else 0
     corpus_growth_pct = (
         ((corpus_final - corpus_initial) / corpus_initial * 100.0)
         if corpus_initial > 0
         else 0.0
     )
 
-    plot_data = parse_plot_data(
-        campaign_dir / "afl_output" / "default" / "plot_data"
-    )
+    plot_data = parse_plot_data(fuzzer_dir / "plot_data")
 
     return CampaignMetrics(
         campaign_id=campaign_dir.name,

@@ -62,9 +62,9 @@ class CampaignOrchestrator:
 
         return completed
 
-    def _initialize_experiment(self) -> str:
+    def _initialize_experiment(self) -> int:
         """Set up the experiment layout and master seed."""
-        master_seed = (self._config.seed if self._config.seed is not None else str(generate_master_seed()))
+        master_seed = self._config.seed if self._config.seed is not None else generate_master_seed()
         create_experiment_layout(self._config.work_dir, self._config.num_campaigns)
         write_experiment_manifest(
             self._config.work_dir, master_seed, self._config.num_campaigns, self._config
@@ -72,10 +72,10 @@ class CampaignOrchestrator:
         self._console.print(f"[bold]Master seed: {master_seed}[/bold]")
         return master_seed
 
-    def _run_campaign(self, index: int, master_seed: str, metadata: dict) -> Path:
+    def _run_campaign(self, index: int, master_seed: int, metadata: dict) -> Path:
         """Run a single campaign and return its directory."""
         campaign_dir = self._config.work_dir / f"campaign_{index:03d}"
-        campaign_seed = derive_campaign_seed(int(master_seed), index)
+        campaign_seed = derive_campaign_seed(master_seed, index)
 
         self._console.print(
             f"\n[bold blue]Campaign {index + 1}/{self._config.num_campaigns}[/bold blue]"
@@ -98,7 +98,7 @@ class CampaignOrchestrator:
             afl_timeout_s=self._config.afl_timeout_s,
             afl_exec_timeout_ms=self._config.afl_exec_timeout_ms,
             stage_timeout_s=self._config.stage_timeout_s,
-            smlgen_jar=self._config.smlgen_jar,
+            smlgen_bin=self._config.smlgen_bin,
             polylex_bin=self._config.polylex_bin,
             diffcomp_bin=self._config.diffcomp_bin,
             afl_fuzz_bin=self._config.afl_fuzz_bin,
@@ -116,7 +116,7 @@ class CampaignOrchestrator:
         end_time = datetime.now(UTC).isoformat()
 
         manifest_data = build_campaign_manifest(
-            index, int(master_seed), campaign_seed, self._config, results, metadata,
+            index, master_seed, campaign_seed, self._config, results, metadata,
             start_time, end_time,
         )
         write_manifest(campaign_dir, manifest_data)
@@ -135,5 +135,5 @@ class CampaignOrchestrator:
             self._console.print(
                 f"[bold yellow]Analytics warning:[/bold yellow] {e}\n"
                 "Campaign data is safe. Re-run analytics with: "
-                "polyfuzz analyze --work-dir <dir>"
+                "polyfuzz analyse --work-dir <dir>"
             )

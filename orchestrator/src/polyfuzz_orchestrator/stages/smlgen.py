@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import shutil
+import os
 from pathlib import Path
 
 from polyfuzz_orchestrator.config import PipelineConfig
@@ -10,10 +10,11 @@ from polyfuzz_orchestrator.stages.base import Stage
 
 
 class SmlgenStage(Stage):
-    """Generate SML corpus files by invoking smlgen via java -cp.
+    """Generate SML corpus files by invoking the smlgen wrapper script.
 
-    smlgen is a Kotlin program packaged as a JAR. The stage invokes ``java -cp <jar> bestetti.enzo.smlgen.MainKt``
-    with CLI arguments for count (``-n``), seed (``-seed``), and output directory (``-o``).
+    smlgen is a Kotlin program built via Gradle ``installDist``.  The stage invokes the generated
+    wrapper script directly with CLI arguments for count (``-n``), seed (``-seed``), and output
+    directory (``-o``).
     """
 
     @property
@@ -21,14 +22,13 @@ class SmlgenStage(Stage):
         return "smlgen"
 
     def validate(self, campaign_dir: Path, config: PipelineConfig) -> None:
-        """Verify smlgen JAR exists and java is available on PATH."""
+        """Verify smlgen binary exists and is executable."""
         errors: list[str] = []
 
-        if not config.smlgen_jar.exists():
-            errors.append(f"smlgen JAR not found at {config.smlgen_jar}")
-
-        if shutil.which("java") is None:
-            errors.append("java not found on PATH (required for smlgen)")
+        if not config.smlgen_bin.exists():
+            errors.append(f"smlgen binary not found at {config.smlgen_bin}")
+        elif not os.access(config.smlgen_bin, os.X_OK):
+            errors.append(f"smlgen binary at {config.smlgen_bin} is not executable")
 
         if errors:
             raise PreflightError(errors)
@@ -38,8 +38,7 @@ class SmlgenStage(Stage):
     ) -> StageResult:
         """Invoke smlgen to generate corpus files.
 
-        Runs: java -cp <jar> bestetti.enzo.smlgen.MainKt
-              -n <tests_per_campaign> -o <corpus_dir> [-seed <seed>]
+        Runs: <smlgen_bin> -n <tests_per_campaign> -o <corpus_dir> [-seed <seed>]
 
         Output goes to the corpus directory within campaign_dir.
         """
@@ -47,7 +46,7 @@ class SmlgenStage(Stage):
         corpus_dir.mkdir(parents=True, exist_ok=True)
 
         cmd = [
-            f"{str(config.smlgen_jar)}",
+            str(config.smlgen_bin),
             "-n",
             str(config.tests_per_campaign),
             "-o",

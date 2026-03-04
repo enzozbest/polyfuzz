@@ -5,17 +5,10 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from datetime import UTC, datetime
 from polyfuzz_orchestrator.campaign import CampaignOrchestrator
-from polyfuzz_orchestrator.config import PipelineConfig, load_config
+from polyfuzz_orchestrator.config import load_config
 from polyfuzz_orchestrator.errors import PipelineError, PreflightError
-from polyfuzz_orchestrator.manifest import (
-    build_campaign_manifest,
-    collect_metadata,
-    write_manifest,
-)
 from polyfuzz_orchestrator.pipeline import PipelineExecutor
-from polyfuzz_orchestrator.seed import generate_master_seed
 
 console = Console()
 
@@ -95,66 +88,17 @@ def cli(
     ctx.obj["config"] = cfg
 
     if ctx.invoked_subcommand is None:
-        if cfg.num_campaigns > 1:
-            orchestrator = CampaignOrchestrator(cfg)
-            try:
-                orchestrator.run(no_analytics=no_analytics)
-            except PreflightError as e:
-                console.print(f"[bold red]Pre-flight check failed:[/bold red]\n{e}")
-                raise SystemExit(1)
-            except PipelineError as e:
-                console.print(
-                    f"[bold red]Pipeline failed at stage '{e.stage_name}'[/bold red]"
-                )
-                raise SystemExit(e.exit_code)
-        else:
-            # Single-campaign mode: we want to ensure isolation in campaign_000/
-            # just like the CampaignOrchestrator does.
-            master_seed = cfg.seed if cfg.seed is not None else str(generate_master_seed())
-            campaign_dir = cfg.work_dir / "campaign_000"
-            campaign_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Re-configure to point to the campaign-specific directory
-            campaign_cfg = PipelineConfig(
-                work_dir=campaign_dir,
-                tests_per_campaign=cfg.tests_per_campaign,
-                seed=int(master_seed),
-                num_campaigns=1,
-                afl_timeout_s=cfg.afl_timeout_s,
-                afl_exec_timeout_ms=cfg.afl_exec_timeout_ms,
-                stage_timeout_s=cfg.stage_timeout_s,
-                smlgen_jar=cfg.smlgen_jar,
-                polylex_bin=cfg.polylex_bin,
-                diffcomp_bin=cfg.diffcomp_bin,
-                afl_fuzz_bin=cfg.afl_fuzz_bin,
+        orchestrator = CampaignOrchestrator(cfg)
+        try:
+            orchestrator.run(no_analytics=no_analytics)
+        except PreflightError as e:
+            console.print(f"[bold red]Pre-flight check failed:[/bold red]\n{e}")
+            raise SystemExit(1)
+        except PipelineError as e:
+            console.print(
+                f"[bold red]Pipeline failed at stage '{e.stage_name}'[/bold red]"
             )
-            
-            executor = PipelineExecutor(campaign_cfg)
-            try:
-                metadata = collect_metadata(cfg)
-                start_time = datetime.now(UTC).isoformat()
-                results = executor.run()
-                end_time = datetime.now(UTC).isoformat()
-                
-                manifest_data = build_campaign_manifest(
-                    campaign_index=0,
-                    master_seed=int(master_seed),
-                    campaign_seed=int(master_seed),
-                    config=cfg,
-                    results=results,
-                    metadata=metadata,
-                    start_time=start_time,
-                    end_time=end_time,
-                )
-                write_manifest(campaign_dir, manifest_data)
-            except PreflightError as e:
-                console.print(f"[bold red]Pre-flight check failed:[/bold red]\n{e}")
-                raise SystemExit(1)
-            except PipelineError as e:
-                console.print(
-                    f"[bold red]Pipeline failed at stage '{e.stage_name}'[/bold red]"
-                )
-                raise SystemExit(e.exit_code)
+            raise SystemExit(e.exit_code)
 
 
 @cli.command("only-smlgen")

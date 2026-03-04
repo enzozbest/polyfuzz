@@ -31,9 +31,11 @@ class DiffcompStage(Stage):
                 f"diffcomp at {config.diffcomp_bin} is not executable"
             )
 
-        queue_dir = campaign_dir / "afl_output" / "default" / "queue"
-        if not queue_dir.exists():
-            errors.append(f"AFL++ queue directory not found at {queue_dir}")
+        queue_dir = self._find_queue_dir(campaign_dir)
+        if queue_dir is None:
+            errors.append(
+                f"AFL++ queue directory not found under {campaign_dir / 'afl_output'}"
+            )
         else:
             input_files = self._list_input_files(queue_dir)
             if not input_files:
@@ -51,11 +53,11 @@ class DiffcompStage(Stage):
         2. Build diffcomp command with absolute paths.
         3. Run and return result.
         """
-        queue_dir = campaign_dir / "afl_output" / "default" / "queue"
+        queue_dir = self._find_queue_dir(campaign_dir)
         staging_dir = campaign_dir / "diffcomp_input"
         output_dir = campaign_dir / "diffcomp_output"
 
-        #Ensure directories exist
+        # Ensure directories exist
         staging_dir.mkdir(parents=True, exist_ok=True)
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -79,6 +81,23 @@ class DiffcompStage(Stage):
             output_dir=output_dir,
             timeout_s=config.stage_timeout_s,
         )
+
+    @staticmethod
+    def _find_queue_dir(campaign_dir: Path) -> Path | None:
+        """Locate the AFL++ queue directory under afl_output.
+
+        AFL++ names its output subdirectory after the fuzzer instance — ``default`` in
+        single-fuzzer mode, or the name passed via ``-M``/``-S`` in parallel mode.
+        This method scans for the first subdirectory containing a ``queue/`` folder.
+        """
+        afl_output = campaign_dir / "afl_output"
+        if not afl_output.exists():
+            return None
+        for child in sorted(afl_output.iterdir()):
+            queue = child / "queue"
+            if queue.is_dir():
+                return queue
+        return None
 
     @staticmethod
     def _list_input_files(queue_dir: Path) -> list[Path]:

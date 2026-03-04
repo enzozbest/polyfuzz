@@ -55,7 +55,7 @@ def test_pipeline_error_message_includes_diagnostics() -> None:
 def test_preflight_error_includes_all_errors_in_message() -> None:
     """PIPE-03 support: PreflightError message includes all component errors for diagnostics."""
     errors = [
-        "smlgen JAR not found at smlgen/build/libs/smlgen.jar",
+        "smlgen binary not found at smlgen/build/install/smlgen/bin/smlgen",
         "polylex binary not found at polylex-harness/polylex_fuzz",
     ]
     err = PreflightError(errors=errors)

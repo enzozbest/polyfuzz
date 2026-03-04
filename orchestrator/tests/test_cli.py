@@ -90,18 +90,18 @@ class TestCLISubcommands:
         assert result.exit_code == 0
         mock_executor.run.assert_called_once_with(only_stage="diffcomp")
 
-    def test_no_subcommand_invokes_full_pipeline(self, tmp_path: Path):
-        """polyfuzz -d /tmp/test with no subcommand runs full pipeline."""
+    def test_no_subcommand_invokes_campaign_orchestrator(self, tmp_path: Path):
+        """polyfuzz -d /tmp/test with no subcommand runs CampaignOrchestrator."""
         runner = CliRunner()
 
-        mock_executor = MagicMock()
-        mock_executor.run.return_value = []
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.run.return_value = []
 
-        with patch("polyfuzz_orchestrator.cli.PipelineExecutor", return_value=mock_executor):
+        with patch("polyfuzz_orchestrator.cli.CampaignOrchestrator", return_value=mock_orchestrator):
             result = runner.invoke(cli, ["-d", str(tmp_path)])
 
         assert result.exit_code == 0
-        mock_executor.run.assert_called_once_with()
+        mock_orchestrator.run.assert_called_once_with(no_analytics=False)
 
     def test_work_dir_is_required(self):
         """polyfuzz with no --work-dir fails."""
@@ -207,25 +207,21 @@ class TestNoAnalyticsFlag:
         assert result.exit_code == 0
         mock_orchestrator.run.assert_called_once_with(no_analytics=False)
 
-    def test_single_campaign_does_not_run_analytics(self, tmp_path: Path):
-        """polyfuzz -d <dir> (single campaign, campaigns=1) does NOT auto-run analytics."""
+    def test_single_campaign_uses_orchestrator_with_analytics(self, tmp_path: Path):
+        """polyfuzz -d <dir> (single campaign, campaigns=1) uses CampaignOrchestrator with analytics."""
         runner = CliRunner()
 
-        mock_executor = MagicMock()
-        mock_executor.run.return_value = []
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.run.return_value = []
 
-        with (
-            patch(
-                "polyfuzz_orchestrator.cli.PipelineExecutor",
-                return_value=mock_executor,
-            ),
-            patch("polyfuzz_orchestrator.analytics.run_analytics") as mock_analytics,
+        with patch(
+            "polyfuzz_orchestrator.cli.CampaignOrchestrator",
+            return_value=mock_orchestrator,
         ):
             result = runner.invoke(cli, ["-d", str(tmp_path)])
 
         assert result.exit_code == 0
-        mock_executor.run.assert_called_once_with()
-        mock_analytics.assert_not_called()
+        mock_orchestrator.run.assert_called_once_with(no_analytics=False)
 
 
 class TestCLIParameterVerification:
@@ -250,12 +246,12 @@ class TestCLIParameterVerification:
         toml_file = tmp_path / "polyfuzz.toml"
         toml_file.write_text("[polyfuzz]\n")
 
-        mock_executor = MagicMock()
-        mock_executor.run.return_value = []
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.run.return_value = []
 
         with patch(
-            "polyfuzz_orchestrator.cli.PipelineExecutor",
-            return_value=mock_executor,
+            "polyfuzz_orchestrator.cli.CampaignOrchestrator",
+            return_value=mock_orchestrator,
         ):
             result = runner.invoke(
                 cli,
@@ -279,9 +275,7 @@ class TestCLIParameterVerification:
 
         captured_config = {}
 
-        original_pipeline_executor = None
-
-        class ConfigCapturingExecutor:
+        class ConfigCapturingOrchestrator:
             def __init__(self, cfg):
                 captured_config["cfg"] = cfg
 
@@ -289,8 +283,8 @@ class TestCLIParameterVerification:
                 return []
 
         with patch(
-            "polyfuzz_orchestrator.cli.PipelineExecutor",
-            ConfigCapturingExecutor,
+            "polyfuzz_orchestrator.cli.CampaignOrchestrator",
+            ConfigCapturingOrchestrator,
         ):
             result = runner.invoke(
                 cli,
@@ -304,8 +298,8 @@ class TestCLIParameterVerification:
         """PIPE-04: CLI surfaces stage name and exit code when pipeline fails."""
         runner = CliRunner()
 
-        mock_executor = MagicMock()
-        mock_executor.run.side_effect = PipelineError(
+        mock_orchestrator = MagicMock()
+        mock_orchestrator.run.side_effect = PipelineError(
             stage_name="afl",
             exit_code=2,
             stderr="segfault",
@@ -313,8 +307,8 @@ class TestCLIParameterVerification:
         )
 
         with patch(
-            "polyfuzz_orchestrator.cli.PipelineExecutor",
-            return_value=mock_executor,
+            "polyfuzz_orchestrator.cli.CampaignOrchestrator",
+            return_value=mock_orchestrator,
         ):
             result = runner.invoke(
                 cli,
