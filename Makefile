@@ -9,7 +9,7 @@
 all: build-smlgen build-polylex build-diffcomp build-orchestrator
 
 build-smlgen:
-	cd smlgen && ./gradlew jar
+	cd smlgen && ./gradlew installDist
 
 build-polylex:
 	$(MAKE) -C polylex-harness
