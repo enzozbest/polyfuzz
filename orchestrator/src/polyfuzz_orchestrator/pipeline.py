@@ -8,6 +8,7 @@ from polyfuzz_orchestrator.layout import create_campaign_layout, create_experime
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult, verify_components
 from polyfuzz_orchestrator.stages import (
     AflStage,
+    CoverageStage,
     DiffcompStage,
     SmlgenStage,
 )
@@ -20,11 +21,11 @@ class PipelineExecutor:
     """Sequences pipeline stages in correct order with error propagation.
 
     Runs pre-flight verification, creates campaign directory layout, then executes stages in order:
-    smlgen -> afl -> diffcomp.
+    smlgen -> afl -> diffcomp -> coverage.
     Stops on first stage failure and raises PipelineError with stage details, or when all stages complete successfully.
     """
 
-    STAGE_ORDER = ["smlgen", "afl", "diffcomp"]
+    STAGE_ORDER = ["smlgen", "afl", "diffcomp", "coverage"]
 
     def __init__(self, config: PipelineConfig) -> None:
         self._config = config
@@ -33,6 +34,7 @@ class PipelineExecutor:
             "smlgen": SmlgenStage(),
             "afl": AflStage(),
             "diffcomp": DiffcompStage(),
+            "coverage": CoverageStage(),
         }
 
     def run(self, only_stage: str | None = None) -> list[StageResult]:
@@ -78,6 +80,8 @@ class PipelineExecutor:
             console.print(
                 f"[green]  completed in {result.duration_seconds:.1f}s[/green]"
             )
+            if result.stdout.strip():
+                console.print(result.stdout.strip())
             results.append(result)
 
         total_time = sum(r.duration_seconds for r in results)

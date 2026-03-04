@@ -29,6 +29,8 @@ NUMERIC_METRIC_FIELDS: list[str] = [
     "stage_smlgen_s",
     "stage_afl_s",
     "stage_diffcomp_s",
+    "stage_coverage_s",
+    "branch_coverage_pct",
 ]
 
 # Growth curve metrics: output name -> plot_data column name.

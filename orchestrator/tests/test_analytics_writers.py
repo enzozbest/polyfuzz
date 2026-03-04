@@ -48,6 +48,10 @@ def _make_metrics(
     stage_smlgen_s: float = 5.0,
     stage_afl_s: float = 50.0,
     stage_diffcomp_s: float = 5.0,
+    stage_coverage_s: float = 0.5,
+    branch_total: int = 101,
+    branch_covered: int = 80,
+    branch_coverage_pct: float = 79.21,
     plot_data: list[dict[str, float]] | None = None,
 ) -> CampaignMetrics:
     if plot_data is None:
@@ -73,6 +77,10 @@ def _make_metrics(
         stage_smlgen_s=stage_smlgen_s,
         stage_afl_s=stage_afl_s,
         stage_diffcomp_s=stage_diffcomp_s,
+        stage_coverage_s=stage_coverage_s,
+        branch_total=branch_total,
+        branch_covered=branch_covered,
+        branch_coverage_pct=branch_coverage_pct,
         plot_data=plot_data,
     )
 
@@ -141,6 +149,10 @@ class TestWriteCampaignMatrix:
         assert "stage_smlgen_s" in row
         assert "stage_afl_s" in row
         assert "stage_diffcomp_s" in row
+        assert "stage_coverage_s" in row
+        assert "branch_total" in row
+        assert "branch_covered" in row
+        assert "branch_coverage_pct" in row
         # plot_data should NOT be in matrix
         assert "plot_data" not in row
 

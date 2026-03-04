@@ -144,3 +144,18 @@ def parse_diffcomp_reports(diffcomp_dir: Path) -> tuple[int, int, int]:
             failure_count += 1
 
     return match_count, diff_count, failure_count
+
+
+def parse_coverage_summary(path: Path) -> dict:
+    """Parse coverage_summary.json into a dictionary.
+
+    Args:
+        path: Path to coverage_summary.json.
+    Returns:
+        Dictionary with coverage data, or empty dict if missing/malformed.
+    """
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, json.JSONDecodeError) as exc:
+        logger.debug("Cannot read coverage summary at %s: %s", path, exc)
+        return {}

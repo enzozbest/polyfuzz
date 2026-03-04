@@ -328,10 +328,10 @@ class TestAflStage:
         assert "-i" in cmd
         assert "-o" in cmd
         assert "-V" in cmd
-        # Should end with -- polylex_bin @@
+        # Should end with -- polylex_bin (no @@ — stdin mode)
         assert "--" in cmd
         assert str(config.polylex_bin) in cmd
-        assert "@@" in cmd
+        assert "@@" not in cmd
 
         assert result == expected_result
 
@@ -584,3 +584,153 @@ class TestDiffcompStage:
         staged_files = list(dirs["diffcomp_input"].glob("*.sml"))
         assert len(staged_files) == 1
         assert staged_files[0].name == "id:000000.sml"
+
+
+# ===========================================================================
+# CoverageStage tests
+# ===========================================================================
+
+
+class TestCoverageStage:
+    """Tests for CoverageStage validation and execution."""
+
+    def _make_coverage_config(self, tmp_path: Path, **overrides) -> PipelineConfig:
+        """Create config with coverage fields."""
+        defaults = {
+            "work_dir": tmp_path,
+            "smlgen_bin": tmp_path / "smlgen_bin",
+            "polylex_bin": tmp_path / "polylex_fuzz",
+            "diffcomp_bin": tmp_path / "diffcomp",
+            "afl_fuzz_bin": tmp_path / "afl-fuzz",
+            "polylex_replay_bin": tmp_path / "polylex_replay",
+            "lex_ml_path": tmp_path / "LEX_.ML",
+            "afl_timeout_s": 300,
+            "stage_timeout_s": 600,
+            "seed": 42,
+        }
+        defaults.update(overrides)
+        return PipelineConfig(**defaults)
+
+    def _setup_queue(self, tmp_path: Path) -> Path:
+        """Create AFL queue dir with a test file."""
+        queue_dir = tmp_path / "afl_output" / "default" / "queue"
+        queue_dir.mkdir(parents=True)
+        (queue_dir / "id:000000").write_text("val x = 1")
+        return queue_dir
+
+    def test_validate_raises_if_replay_bin_missing(self, tmp_path: Path):
+        from polyfuzz_orchestrator.stages.coverage import CoverageStage
+
+        config = self._make_coverage_config(tmp_path)
+        # Do NOT create polylex_replay_bin
+        config.lex_ml_path.write_text("aflTrace 1\n")
+        self._setup_queue(tmp_path)
+
+        stage = CoverageStage()
+        with pytest.raises(PreflightError):
+            stage.validate(tmp_path, config)
+
+    def test_validate_raises_if_lex_ml_missing(self, tmp_path: Path):
+        from polyfuzz_orchestrator.stages.coverage import CoverageStage
+
+        config = self._make_coverage_config(tmp_path)
+        _make_fake_binary(config.polylex_replay_bin)
+        # Do NOT create lex_ml_path
+        self._setup_queue(tmp_path)
+
+        stage = CoverageStage()
+        with pytest.raises(PreflightError):
+            stage.validate(tmp_path, config)
+
+    def test_validate_raises_if_queue_dir_missing(self, tmp_path: Path):
+        from polyfuzz_orchestrator.stages.coverage import CoverageStage
+
+        config = self._make_coverage_config(tmp_path)
+        _make_fake_binary(config.polylex_replay_bin)
+        config.lex_ml_path.write_text("aflTrace 1\n")
+        # Do NOT create queue dir
+
+        stage = CoverageStage()
+        with pytest.raises(PreflightError):
+            stage.validate(tmp_path, config)
+
+    def test_validate_passes_when_all_present(self, tmp_path: Path):
+        from polyfuzz_orchestrator.stages.coverage import CoverageStage
+
+        config = self._make_coverage_config(tmp_path)
+        _make_fake_binary(config.polylex_replay_bin)
+        config.lex_ml_path.write_text("aflTrace 1\naflTrace 2\n")
+        self._setup_queue(tmp_path)
+
+        stage = CoverageStage()
+        stage.validate(tmp_path, config)
+
+    def test_execute_writes_coverage_summary(self, tmp_path: Path):
+        import json
+        from polyfuzz_orchestrator.stages.coverage import CoverageStage
+
+        config = self._make_coverage_config(tmp_path)
+        _make_fake_binary(config.polylex_replay_bin)
+        config.lex_ml_path.write_text(
+            "fun foo x = aflTrace 1;\n"
+            "fun bar y = aflTrace 2;\n"
+            "fun baz z = aflTrace 3;\n"
+        )
+        self._setup_queue(tmp_path)
+
+        # Create coverage_out/coverage.log as if polylex_replay wrote it
+        coverage_out = tmp_path / "coverage_out"
+        coverage_out.mkdir(parents=True, exist_ok=True)
+        (coverage_out / "coverage.log").write_text("1\n2\n")
+
+        runner = MagicMock(spec=ProcessRunner)
+        runner.run.return_value = StageResult(
+            stage_name="coverage",
+            exit_code=0,
+            duration_seconds=1.0,
+            stdout="",
+            stderr="",
+            output_dir=coverage_out,
+        )
+
+        stage = CoverageStage()
+        result = stage.execute(tmp_path, config, runner)
+
+        assert result.exit_code == 0
+        summary_path = coverage_out / "coverage_summary.json"
+        assert summary_path.exists()
+        summary = json.loads(summary_path.read_text())
+        assert summary["total_branches"] == 3
+        assert summary["covered_branches"] == 2
+        assert summary["branch_coverage_pct"] == pytest.approx(66.67)
+        assert summary["uncovered_ids"] == [3]
+
+    def test_execute_calls_runner_with_cwd_and_input_data(self, tmp_path: Path):
+        from polyfuzz_orchestrator.stages.coverage import CoverageStage
+
+        config = self._make_coverage_config(tmp_path)
+        _make_fake_binary(config.polylex_replay_bin)
+        config.lex_ml_path.write_text("aflTrace 1\n")
+        queue_dir = self._setup_queue(tmp_path)
+
+        coverage_out = tmp_path / "coverage_out"
+        coverage_out.mkdir(parents=True, exist_ok=True)
+
+        runner = MagicMock(spec=ProcessRunner)
+        runner.run.return_value = StageResult(
+            stage_name="coverage",
+            exit_code=0,
+            duration_seconds=1.0,
+            stdout="",
+            stderr="",
+            output_dir=coverage_out,
+        )
+
+        stage = CoverageStage()
+        stage.execute(tmp_path, config, runner)
+
+        runner.run.assert_called_once()
+        call_args = runner.run.call_args
+        assert call_args[1]["cwd"] == tmp_path
+        assert call_args[1]["input_data"] is not None
+        assert isinstance(call_args[1]["input_data"], bytes)

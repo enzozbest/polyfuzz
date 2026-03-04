@@ -14,6 +14,7 @@ def create_campaign_layout(work_dir: Path) -> dict[str, Path]:
         "afl_output": work_dir / "afl_output",
         "diffcomp_input": work_dir / "diffcomp_input",
         "diffcomp_output": work_dir / "diffcomp_output",
+        "coverage_out": work_dir / "coverage_out",
         "results": work_dir / "results",
     }
     for d in dirs.values():

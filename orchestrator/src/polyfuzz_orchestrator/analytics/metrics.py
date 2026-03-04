@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from polyfuzz_orchestrator.analytics.parsers import (
+    parse_coverage_summary,
     parse_diffcomp_reports,
     parse_fuzzer_stats,
     parse_plot_data,
@@ -43,6 +44,10 @@ class CampaignMetrics:
     stage_smlgen_s: float
     stage_afl_s: float
     stage_diffcomp_s: float
+    stage_coverage_s: float
+    branch_total: int
+    branch_covered: int
+    branch_coverage_pct: float
     plot_data: list[dict[str, float]]
 
 
@@ -121,6 +126,10 @@ def extract_campaign_metrics(campaign_dir: Path) -> CampaignMetrics | None:
 
     plot_data = parse_plot_data(fuzzer_dir / "plot_data")
 
+    coverage = parse_coverage_summary(
+        campaign_dir / "coverage_out" / "coverage_summary.json"
+    )
+
     return CampaignMetrics(
         campaign_id=campaign_dir.name,
         seed=campaign_seed,
@@ -135,6 +144,10 @@ def extract_campaign_metrics(campaign_dir: Path) -> CampaignMetrics | None:
         stage_smlgen_s=stages.get("smlgen", 0.0),
         stage_afl_s=stages.get("afl", 0.0),
         stage_diffcomp_s=stages.get("diffcomp", 0.0),
+        stage_coverage_s=stages.get("coverage", 0.0),
+        branch_total=int(coverage.get("total_branches", 0)),
+        branch_covered=int(coverage.get("covered_branches", 0)),
+        branch_coverage_pct=float(coverage.get("branch_coverage_pct", 0.0)),
         plot_data=plot_data,
     )
 

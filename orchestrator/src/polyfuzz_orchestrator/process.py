@@ -36,6 +36,8 @@ class ProcessRunner:
         output_dir: Path,
         timeout_s: int,
         env: dict[str, str] | None = None,
+        cwd: Path | None = None,
+        input_data: bytes | None = None,
     ) -> StageResult:
         """Run a subprocess and capture its output.
 
@@ -43,13 +45,30 @@ class ProcessRunner:
         """
         start = time.monotonic()
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout_s,
-                env=env,
-            )
+            if input_data is not None:
+                result = subprocess.run(
+                    cmd,
+                    input=input_data,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=timeout_s,
+                    env=env,
+                    cwd=cwd,
+                )
+                # Decode bytes to str for StageResult compatibility
+                stdout = result.stdout.decode("utf-8", errors="replace") if isinstance(result.stdout, bytes) else (result.stdout or "")
+                stderr = result.stderr.decode("utf-8", errors="replace") if isinstance(result.stderr, bytes) else (result.stderr or "")
+            else:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_s,
+                    env=env,
+                    cwd=cwd,
+                )
+                stdout = result.stdout
+                stderr = result.stderr
         except subprocess.TimeoutExpired as e:
             duration = time.monotonic() - start
             return StageResult(
@@ -66,8 +85,8 @@ class ProcessRunner:
             stage_name=stage_name,
             exit_code=result.returncode,
             duration_seconds=duration,
-            stdout=result.stdout,
-            stderr=result.stderr,
+            stdout=stdout,
+            stderr=stderr,
             output_dir=output_dir,
         )
 
@@ -87,6 +106,7 @@ def verify_components(config: PipelineConfig) -> list[str]:
         (config.polylex_bin, "polylex binary"),
         (config.afl_fuzz_bin, "afl-fuzz binary"),
         (config.diffcomp_bin, "diffcomp binary"),
+        (config.polylex_replay_bin, "polylex_replay binary"),
     ]
     for path, label in bin_checks:
         if not path.exists():

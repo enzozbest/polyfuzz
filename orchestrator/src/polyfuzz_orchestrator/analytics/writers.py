@@ -32,6 +32,10 @@ PRECISION: dict[str, str] = {
     "stage_smlgen_s": ".1f",
     "stage_afl_s": ".1f",
     "stage_diffcomp_s": ".1f",
+    "stage_coverage_s": ".1f",
+    "branch_total": "d",
+    "branch_covered": "d",
+    "branch_coverage_pct": ".2f",
 }
 
 MATRIX_COLUMNS: list[str] = [
@@ -48,6 +52,10 @@ MATRIX_COLUMNS: list[str] = [
     "stage_smlgen_s",
     "stage_afl_s",
     "stage_diffcomp_s",
+    "stage_coverage_s",
+    "branch_total",
+    "branch_covered",
+    "branch_coverage_pct",
 ]
 
 def _atomic_write_csv(path: Path, headers: list[str], rows: list[list[str]]) -> None:
@@ -220,7 +228,7 @@ def write_summary_json(
     except (json.JSONDecodeError, OSError):
         manifest = {}
 
-    key_metrics = ["bitmap_cvg", "edges_found", "mismatch_rate"]
+    key_metrics = ["bitmap_cvg", "edges_found", "mismatch_rate", "branch_coverage_pct"]
     key_aggregates = {k: stats[k] for k in key_metrics if k in stats}
 
     summary = {
@@ -265,6 +273,7 @@ def print_terminal_summary(
     table.add_column("Mismatches", justify="right")
     table.add_column("Rate", justify="right")
     table.add_column("Corpus Growth (%)", justify="right")
+    table.add_column("Branch Cvg (%)", justify="right")
     table.add_column("Time (s)", justify="right")
 
     for m in metrics:
@@ -275,6 +284,7 @@ def print_terminal_summary(
             str(m.mismatch_count),
             f"{m.mismatch_rate:.4f}",
             f"{m.corpus_growth_pct:.1f}",
+            f"{m.branch_coverage_pct:.2f}",
             f"{m.total_time_s:.1f}",
         )
 
@@ -284,6 +294,7 @@ def print_terminal_summary(
         cvg = stats.get("bitmap_cvg", {})
         edges = stats.get("edges_found", {})
         rate = stats.get("mismatch_rate", {})
+        branch_cvg = stats.get("branch_coverage_pct", {})
 
         console.print(
             f"\n[bold]Aggregates:[/bold] "
@@ -292,7 +303,9 @@ def print_terminal_summary(
             f"Edges {edges.get('mean', 0):.0f} "
             f"(CI: {edges.get('ci_lower', 0):.0f}-{edges.get('ci_upper', 0):.0f}), "
             f"Mismatch rate {rate.get('mean', 0):.4f} "
-            f"(CI: {rate.get('ci_lower', 0):.4f}-{rate.get('ci_upper', 0):.4f})"
+            f"(CI: {rate.get('ci_lower', 0):.4f}-{rate.get('ci_upper', 0):.4f}), "
+            f"Branch cvg {branch_cvg.get('mean', 0):.2f}% "
+            f"(CI: {branch_cvg.get('ci_lower', 0):.2f}-{branch_cvg.get('ci_upper', 0):.2f})"
         )
 
     if skipped:

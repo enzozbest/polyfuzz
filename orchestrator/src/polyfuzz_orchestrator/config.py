@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Any
 
 # Fields that should be converted from strings to Path objects
-_PATH_FIELDS = frozenset({"work_dir", "smlgen_bin", "polylex_bin", "diffcomp_bin", "afl_fuzz_bin"})
+_PATH_FIELDS = frozenset({
+    "work_dir", "smlgen_bin", "polylex_bin", "diffcomp_bin", "afl_fuzz_bin",
+    "polylex_replay_bin", "lex_ml_path",
+})
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,8 @@ class PipelineConfig:
     polylex_bin: Path = field(default_factory=lambda: Path("polylex-harness/polylex_fuzz"))
     diffcomp_bin: Path = field(default_factory=lambda: Path("diffcomp/build/install/diffcomp/bin/diffcomp"))
     afl_fuzz_bin: Path = field(default_factory=lambda: Path("/usr/local/bin/afl-fuzz"))
+    polylex_replay_bin: Path = field(default_factory=lambda: Path("polylex-harness/polylex_replay"))
+    lex_ml_path: Path = field(default_factory=lambda: Path("polylex-harness/LEX_.ML"))
 
     def __post_init__(self) -> None:
         """Validate timeout hierarchy."""

@@ -76,12 +76,17 @@ class TestVerifyComponents:
         afl_bin.touch()
         afl_bin.chmod(afl_bin.stat().st_mode | stat.S_IEXEC)
 
+        replay_bin = tmp_path / "polylex_replay"
+        replay_bin.touch()
+        replay_bin.chmod(replay_bin.stat().st_mode | stat.S_IEXEC)
+
         config = PipelineConfig(
             work_dir=tmp_path,
             smlgen_bin=smlgen_bin,
             polylex_bin=polylex_bin,
             diffcomp_bin=diffcomp_bin,
             afl_fuzz_bin=afl_bin,
+            polylex_replay_bin=replay_bin,
         )
 
         errors = verify_components(config)
@@ -98,7 +103,7 @@ class TestVerifyComponents:
         )
 
         errors = verify_components(config)
-        assert len(errors) >= 4  # At least one per missing component
+        assert len(errors) >= 5  # At least one per missing component
         # Each error should mention the component that's missing
         combined = " ".join(errors)
         assert "smlgen" in combined.lower() or "nonexistent_smlgen" in combined

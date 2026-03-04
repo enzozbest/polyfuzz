@@ -40,6 +40,10 @@ def _make_metrics(
     stage_smlgen_s: float = 5.0,
     stage_afl_s: float = 50.0,
     stage_diffcomp_s: float = 5.0,
+    stage_coverage_s: float = 0.5,
+    branch_total: int = 101,
+    branch_covered: int = 80,
+    branch_coverage_pct: float = 79.21,
     plot_data: list[dict[str, float]] | None = None,
 ) -> CampaignMetrics:
     """Build a CampaignMetrics with sensible defaults, overridable per-field."""
@@ -66,6 +70,10 @@ def _make_metrics(
         stage_smlgen_s=stage_smlgen_s,
         stage_afl_s=stage_afl_s,
         stage_diffcomp_s=stage_diffcomp_s,
+        stage_coverage_s=stage_coverage_s,
+        branch_total=branch_total,
+        branch_covered=branch_covered,
+        branch_coverage_pct=branch_coverage_pct,
         plot_data=plot_data,
     )
 
@@ -157,6 +165,7 @@ class TestComputeCrossCampaignStats:
             "bitmap_cvg", "edges_found", "mismatch_count", "mismatch_rate",
             "corpus_initial", "corpus_final", "corpus_growth_pct",
             "total_time_s", "stage_smlgen_s", "stage_afl_s", "stage_diffcomp_s",
+            "stage_coverage_s", "branch_coverage_pct",
         ]
         for field in expected_fields:
             assert field in stats, f"Missing field: {field}"

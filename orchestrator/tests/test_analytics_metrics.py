@@ -22,6 +22,7 @@ def _create_complete_campaign(
     stage_smlgen: float = 5.2,
     stage_afl: float = 300.1,
     stage_diffcomp: float = 24.7,
+    stage_coverage: float = 0.5,
     bitmap_cvg: float = 45.23,
     edges_found: int = 1234,
     corpus_count: int = 567,
@@ -30,6 +31,9 @@ def _create_complete_campaign(
     match_count: int = 140,
     diff_count: int = 8,
     failure_count: int = 2,
+    branch_total: int = 101,
+    branch_covered: int = 80,
+    branch_coverage_pct: float = 79.21,
 ) -> None:
     """Create a realistic complete campaign directory structure for testing."""
     campaign_dir.mkdir(parents=True, exist_ok=True)
@@ -53,6 +57,7 @@ def _create_complete_campaign(
                 "smlgen": stage_smlgen,
                 "afl": stage_afl,
                 "diffcomp": stage_diffcomp,
+                "coverage": stage_coverage,
             },
         },
         "metadata": {},
@@ -114,6 +119,18 @@ def _create_complete_campaign(
         )
         file_idx += 1
 
+    # Create coverage_out with summary
+    coverage_dir = campaign_dir / "coverage_out"
+    coverage_dir.mkdir()
+    (coverage_dir / "coverage_summary.json").write_text(
+        json.dumps({
+            "total_branches": branch_total,
+            "covered_branches": branch_covered,
+            "branch_coverage_pct": branch_coverage_pct,
+            "uncovered_ids": list(range(branch_covered + 1, branch_total + 1)),
+        })
+    )
+
 
 # ---------------------------------------------------------------------------
 # CampaignMetrics dataclass tests
@@ -138,6 +155,10 @@ class TestCampaignMetrics:
             stage_smlgen_s=5.2,
             stage_afl_s=300.1,
             stage_diffcomp_s=24.7,
+            stage_coverage_s=0.5,
+            branch_total=101,
+            branch_covered=80,
+            branch_coverage_pct=79.21,
             plot_data=[],
         )
         assert metrics.campaign_id == "campaign_000"
@@ -153,6 +174,10 @@ class TestCampaignMetrics:
         assert metrics.stage_smlgen_s == pytest.approx(5.2)
         assert metrics.stage_afl_s == pytest.approx(300.1)
         assert metrics.stage_diffcomp_s == pytest.approx(24.7)
+        assert metrics.stage_coverage_s == pytest.approx(0.5)
+        assert metrics.branch_total == 101
+        assert metrics.branch_covered == 80
+        assert metrics.branch_coverage_pct == pytest.approx(79.21)
         assert metrics.plot_data == []
 
     def test_is_frozen(self) -> None:
@@ -170,6 +195,10 @@ class TestCampaignMetrics:
             stage_smlgen_s=0.0,
             stage_afl_s=0.0,
             stage_diffcomp_s=0.0,
+            stage_coverage_s=0.0,
+            branch_total=0,
+            branch_covered=0,
+            branch_coverage_pct=0.0,
             plot_data=[],
         )
         with pytest.raises(AttributeError):
@@ -212,6 +241,10 @@ class TestExtractCampaignMetrics:
         assert metrics.stage_smlgen_s == pytest.approx(5.2)
         assert metrics.stage_afl_s == pytest.approx(300.1)
         assert metrics.stage_diffcomp_s == pytest.approx(24.7)
+        assert metrics.stage_coverage_s == pytest.approx(0.5)
+        assert metrics.branch_total == 101
+        assert metrics.branch_covered == 80
+        assert metrics.branch_coverage_pct == pytest.approx(79.21)
         assert len(metrics.plot_data) == 2
 
     def test_returns_none_for_missing_manifest(self, tmp_path: Path) -> None:
@@ -289,6 +322,9 @@ class TestExtractCampaignMetrics:
         assert metrics is not None
         assert metrics.bitmap_cvg == pytest.approx(0.0)
         assert metrics.edges_found == 0
+        assert metrics.branch_total == 0
+        assert metrics.branch_covered == 0
+        assert metrics.branch_coverage_pct == pytest.approx(0.0)
 
     def test_plot_data_included_in_metrics(self, tmp_path: Path) -> None:
         campaign_dir = tmp_path / "campaign_007"

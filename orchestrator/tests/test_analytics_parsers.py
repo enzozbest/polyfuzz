@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from polyfuzz_orchestrator.analytics.parsers import (
+    parse_coverage_summary,
     parse_diffcomp_reports,
     parse_fuzzer_stats,
     parse_plot_data,
@@ -278,3 +279,37 @@ class TestParseDiffcompReports:
         assert match == 5
         assert diff == 3
         assert failure == 0
+
+
+# ---------------------------------------------------------------------------
+# parse_coverage_summary tests
+# ---------------------------------------------------------------------------
+
+
+class TestParseCoverageSummary:
+    """Tests for coverage_summary.json parsing."""
+
+    def test_parses_valid_summary(self, tmp_path: Path) -> None:
+        summary_file = tmp_path / "coverage_summary.json"
+        data = {
+            "total_branches": 101,
+            "covered_branches": 80,
+            "branch_coverage_pct": 79.21,
+            "uncovered_ids": [5, 10, 15],
+        }
+        summary_file.write_text(json.dumps(data))
+        result = parse_coverage_summary(summary_file)
+        assert result["total_branches"] == 101
+        assert result["covered_branches"] == 80
+        assert result["branch_coverage_pct"] == pytest.approx(79.21)
+        assert result["uncovered_ids"] == [5, 10, 15]
+
+    def test_returns_empty_dict_for_missing_file(self, tmp_path: Path) -> None:
+        result = parse_coverage_summary(tmp_path / "nonexistent.json")
+        assert result == {}
+
+    def test_returns_empty_dict_for_malformed_json(self, tmp_path: Path) -> None:
+        bad_file = tmp_path / "coverage_summary.json"
+        bad_file.write_text("not json {{{")
+        result = parse_coverage_summary(bad_file)
+        assert result == {}

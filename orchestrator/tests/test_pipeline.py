@@ -72,8 +72,8 @@ def _make_failed_result(stage_name: str, output_dir: Path) -> StageResult:
 class TestPipelineExecutorFullPipeline:
     """Test PipelineExecutor.run() with no only_stage (full pipeline)."""
 
-    def test_runs_all_three_stages_in_order(self, tmp_path: Path):
-        """PipelineExecutor.run() with no only_stage executes all 3 stages in order."""
+    def test_runs_all_stages_in_order(self, tmp_path: Path):
+        """PipelineExecutor.run() with no only_stage executes all 4 stages in order."""
         from polyfuzz_orchestrator.pipeline import PipelineExecutor
 
         config = _make_config(tmp_path)
@@ -94,16 +94,18 @@ class TestPipelineExecutorFullPipeline:
             patch.object(executor._stages["smlgen"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["afl"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["diffcomp"], "validate", side_effect=mock_validate),
+            patch.object(executor._stages["coverage"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["smlgen"], "execute", side_effect=make_mock_execute("smlgen")),
             patch.object(executor._stages["afl"], "execute", side_effect=make_mock_execute("afl")),
             patch.object(executor._stages["diffcomp"], "execute", side_effect=make_mock_execute("diffcomp")),
+            patch.object(executor._stages["coverage"], "execute", side_effect=make_mock_execute("coverage")),
             patch("polyfuzz_orchestrator.pipeline.verify_components", return_value=[]),
             patch("polyfuzz_orchestrator.pipeline.create_campaign_layout", return_value={}),
         ):
             results = executor.run()
 
-        assert executed_stages == ["smlgen", "afl", "diffcomp"]
-        assert len(results) == 3
+        assert executed_stages == ["smlgen", "afl", "diffcomp", "coverage"]
+        assert len(results) == 4
 
     def test_returns_list_of_stage_results(self, tmp_path: Path):
         """PipelineExecutor.run() returns list of StageResults for all completed stages."""
@@ -124,22 +126,24 @@ class TestPipelineExecutorFullPipeline:
             patch.object(executor._stages["smlgen"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["afl"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["diffcomp"], "validate", side_effect=mock_validate),
+            patch.object(executor._stages["coverage"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["smlgen"], "execute", side_effect=make_mock_execute("smlgen")),
             patch.object(executor._stages["afl"], "execute", side_effect=make_mock_execute("afl")),
             patch.object(executor._stages["diffcomp"], "execute", side_effect=make_mock_execute("diffcomp")),
+            patch.object(executor._stages["coverage"], "execute", side_effect=make_mock_execute("coverage")),
             patch("polyfuzz_orchestrator.pipeline.verify_components", return_value=[]),
             patch("polyfuzz_orchestrator.pipeline.create_campaign_layout", return_value={}),
         ):
             results = executor.run()
 
         assert all(isinstance(r, StageResult) for r in results)
-        assert [r.stage_name for r in results] == ["smlgen", "afl", "diffcomp"]
+        assert [r.stage_name for r in results] == ["smlgen", "afl", "diffcomp", "coverage"]
 
 
 class TestPipelineExecutorSingleStage:
     """Test PipelineExecutor.run(only_stage=...) for each stage."""
 
-    @pytest.mark.parametrize("stage_name", ["smlgen", "afl", "diffcomp"])
+    @pytest.mark.parametrize("stage_name", ["smlgen", "afl", "diffcomp", "coverage"])
     def test_runs_only_specified_stage(self, tmp_path: Path, stage_name: str):
         """PipelineExecutor.run(only_stage=X) executes only that stage."""
         from polyfuzz_orchestrator.pipeline import PipelineExecutor
@@ -160,7 +164,7 @@ class TestPipelineExecutorSingleStage:
 
         # Patch all stages using ExitStack for dynamic list of patches
         patches = []
-        for sn in ["smlgen", "afl", "diffcomp"]:
+        for sn in ["smlgen", "afl", "diffcomp", "coverage"]:
             patches.append(patch.object(executor._stages[sn], "validate", side_effect=mock_validate))
             patches.append(patch.object(executor._stages[sn], "execute", side_effect=make_mock_execute(sn)))
         patches.append(patch("polyfuzz_orchestrator.pipeline.verify_components", return_value=[]))
@@ -228,9 +232,11 @@ class TestPipelineExecutorFailure:
             patch.object(executor._stages["smlgen"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["afl"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["diffcomp"], "validate", side_effect=mock_validate),
+            patch.object(executor._stages["coverage"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["smlgen"], "execute", side_effect=mock_smlgen_fail),
             patch.object(executor._stages["afl"], "execute", side_effect=mock_afl_execute),
             patch.object(executor._stages["diffcomp"], "execute", side_effect=lambda *a: _make_successful_result("diffcomp", tmp_path)),
+            patch.object(executor._stages["coverage"], "execute", side_effect=lambda *a: _make_successful_result("coverage", tmp_path)),
             patch("polyfuzz_orchestrator.pipeline.verify_components", return_value=[]),
             patch("polyfuzz_orchestrator.pipeline.create_campaign_layout", return_value={}),
         ):
@@ -270,9 +276,11 @@ class TestPipelineExecutorPreflight:
             patch.object(executor._stages["smlgen"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["afl"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["diffcomp"], "validate", side_effect=mock_validate),
+            patch.object(executor._stages["coverage"], "validate", side_effect=mock_validate),
             patch.object(executor._stages["smlgen"], "execute", side_effect=make_mock_execute("smlgen")),
             patch.object(executor._stages["afl"], "execute", side_effect=make_mock_execute("afl")),
             patch.object(executor._stages["diffcomp"], "execute", side_effect=make_mock_execute("diffcomp")),
+            patch.object(executor._stages["coverage"], "execute", side_effect=make_mock_execute("coverage")),
             patch("polyfuzz_orchestrator.pipeline.verify_components", side_effect=mock_verify),
             patch("polyfuzz_orchestrator.pipeline.create_campaign_layout", return_value={}),
         ):

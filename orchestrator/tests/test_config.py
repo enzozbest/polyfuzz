@@ -19,6 +19,8 @@ class TestPipelineConfigDefaults:
         assert config.stage_timeout_s == 600
         assert config.seed is None
         assert config.afl_exec_timeout_ms is None
+        assert config.polylex_replay_bin == Path("polylex-harness/polylex_replay")
+        assert config.lex_ml_path == Path("polylex-harness/LEX_.ML")
 
     def test_config_is_frozen(self, tmp_path: Path) -> None:
         """PipelineConfig instances are frozen (immutable)."""
@@ -97,6 +99,22 @@ class TestLoadConfig:
 
         assert isinstance(config.smlgen_bin, Path)
         assert config.smlgen_bin == Path("custom/path/smlgen.jar")
+
+    def test_load_config_converts_coverage_path_strings(self, tmp_path: Path) -> None:
+        """load_config converts polylex_replay_bin and lex_ml_path strings to Path objects."""
+        toml_file = tmp_path / "polyfuzz.toml"
+        toml_file.write_text(
+            '[polyfuzz]\n'
+            'polylex_replay_bin = "custom/polylex_replay"\n'
+            'lex_ml_path = "custom/LEX_.ML"\n'
+        )
+
+        config = load_config(toml_path=toml_file, work_dir=tmp_path)
+
+        assert isinstance(config.polylex_replay_bin, Path)
+        assert config.polylex_replay_bin == Path("custom/polylex_replay")
+        assert isinstance(config.lex_ml_path, Path)
+        assert config.lex_ml_path == Path("custom/LEX_.ML")
 
 
 class TestTomlCliEquivalence:

@@ -52,7 +52,7 @@ class AflStage(Stage):
     ) -> StageResult:
         """Invoke afl-fuzz with correct flags and environment.
 
-        Command: afl-fuzz -i <corpus> -o <afl_output> -V <timeout> [options] -- <polylex> @@
+        Command: afl-fuzz -i <corpus> -o <afl_output> -V <timeout> [options] -- <polylex>
         Environment: AFL_SKIP_CPUFREQ=1, AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1, AFL_NO_UI=1
         """
         corpus_dir = campaign_dir / "corpus"
@@ -74,7 +74,7 @@ class AflStage(Stage):
         if config.afl_exec_timeout_ms is not None:
             cmd.extend(["-t", str(config.afl_exec_timeout_ms)])
 
-        cmd.extend(["--", str(config.polylex_bin), "@@"])
+        cmd.extend(["--", str(config.polylex_bin)])
 
         # Merge with current environment and add AFL++ headless variables
         env = {
