@@ -1,0 +1,29 @@
+name: Orchestrator Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install
+        working-directory: orchestrator
+
+      - name: Install dependencies
+        run: uv sync --dev
+        working-directory: orchestrator
+
+      - name: Run tests
+        run: uv run pytest
+        working-directory: orchestrator
