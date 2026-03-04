@@ -102,5 +102,9 @@ struct
     in
         ()
     end
-    handle _ => ()  (* Catch everything — fuzz input WILL be malformed *)
+    handle _ => ()
+    (* Lexer exceptions are caught inside tokenise (line 77-80) and return partial
+       results.  Exceptions that reach here are infrastructure failures — FFI setup,
+       stdin I/O, broken stdout pipe — not input-dependent lexer bugs, so silently
+       exiting with 0 is correct: AFL++ should not treat them as interesting crashes. *)
 end;

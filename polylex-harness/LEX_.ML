@@ -1,6 +1,14 @@
 (* LEX_.ML instrumented for fuzzing
     This file is a copy of LEX_.ML from the original PolyML repository with tracing code added for AFL++ fuzzing.
     Please refer to LEX__ORIGINAL.ML to see the original implementation and accreditations.
+
+    AFL++ Trace IDs:
+    Each aflTrace call uses a random 16-bit ID (0-65535).
+    No two IDs share the same (id >> 1) value, which prevents prev_loc collisions
+    in AFL++'s edge coverage bitmap (bitmap[cur ^ prev_loc]++; prev_loc = cur >> 1).
+    This mirrors how afl-clang-fast assigns instrumentation IDs and maximises
+    the distinguishability of edges in the coverage map.
+    IDs were generated with seed=42 via Python random.randint
 *)
 
 functor LEX_ (
@@ -52,10 +60,10 @@ struct
     and isHexadecimal  = Char.isHexDigit
 
     fun isAlphaNumeric c =
-        if Char.isAlphaNum c then (aflTrace 1; true)
-        else if c = #"'" then (aflTrace 2; true)
-        else if c = #"_" then (aflTrace 3; true)
-        else (aflTrace 4; false)
+        if Char.isAlphaNum c then (aflTrace 41906; true)
+        else if c = #"'" then (aflTrace 7297; true)
+        else if c = #"_" then (aflTrace 1640; true)
+        else (aflTrace 48599; false)
 
     val errorMessageProcTag:
         ({ location: location, hard: bool, message: pretty, context: pretty option } -> unit)
@@ -69,8 +77,8 @@ struct
         open DEBUG
         val errorMessageProc =
             case List.find (Universal.tagIs errorMessageProcTag) parameters of
-                SOME f => (aflTrace 5; Universal.tagProject errorMessageProcTag f)
-            |   NONE => (aflTrace 6; fn _ => raise Fail "Error in source code")
+                SOME f => (aflTrace 18025; Universal.tagProject errorMessageProcTag f)
+            |   NONE => (aflTrace 16050; fn _ => raise Fail "Error in source code")
         val lineno = getParameter lineNumberTag parameters
         val offset = getParameter offsetTag parameters
         val filename = getParameter fileNameTag parameters
@@ -109,7 +117,7 @@ struct
 
     fun reportError ({messageOut,errors,...} : lexan) (report as { hard, ...}) =
     (
-        if hard then (aflTrace 10; errors := true) else (aflTrace 11; ());
+        if hard then (aflTrace 14629; errors := true) else (aflTrace 9145; ());
         messageOut report
     )
 
@@ -132,10 +140,10 @@ struct
     fun breakWords str =
     let
         val words = String.tokens Char.isSpace str
-        fun addBreaks [] = (aflTrace 15; [PrettyString ""])
-        |   addBreaks [last] = (aflTrace 16; [PrettyString last])
+        fun addBreaks [] = (aflTrace 48266; [PrettyString ""])
+        |   addBreaks [last] = (aflTrace 6718; [PrettyString last])
         |   addBreaks (hd :: tl) =
-                (aflTrace 17; PrettyString hd :: PrettyBreak(1, 0) :: addBreaks tl)
+                (aflTrace 44349; PrettyString hd :: PrettyBreak(1, 0) :: addBreaks tl)
     in
         addBreaks words
     end
@@ -165,13 +173,13 @@ struct
 
     exception EndOfLine;
 
-    fun nextCh({ch, stream, extraChars = ref [], ...}) = (aflTrace 20; ch := getOpt(stream(), eofChar))
-     |  nextCh({ch, extraChars = extra as ref(c::l), ...}) = (aflTrace 21; extra := l; ch := c)
+    fun nextCh({ch, stream, extraChars = ref [], ...}) = (aflTrace 48541; ch := getOpt(stream(), eofChar))
+     |  nextCh({ch, extraChars = extra as ref(c::l), ...}) = (aflTrace 58470; extra := l; ch := c)
 
     fun skipWhiteSpace (state as {ch = ref c, ...}:lexan) : char =
     if isWhiteSpace c
-    then (aflTrace 22; setSymbolEnd state; nextCh state; skipWhiteSpace state)
-    else (aflTrace 23; c)
+    then (aflTrace 35742; setSymbolEnd state; nextCh state; skipWhiteSpace state)
+    else (aflTrace 5698; c)
 
     fun readChars (state as { ch, ... }) (isOk: char -> bool) (s: string) : string =
     let
@@ -180,15 +188,15 @@ struct
             val theChar  = ! ch;
         in
             if isOk theChar
-            then (aflTrace 24; setSymbolEnd state; nextCh state; str theChar :: loop ())
-            else (aflTrace 25; [])
+            then (aflTrace 38699; setSymbolEnd state; nextCh state; str theChar :: loop ())
+            else (aflTrace 27652; [])
         end;
     in
         concat (s :: loop ())
     end;
 
     (* ================================================================ *)
-    (* parseNumber — IDs 100-199                                        *)
+    (* parseNumber                                                      *)
     (* ================================================================ *)
     fun parseNumber (hasMinus, state as { sy, id, ch, extraChars, ... }) =
      (
@@ -198,114 +206,114 @@ struct
         if not hasMinus andalso !ch = #"w" andalso !id = "0"
         then (* word constant *)
         (
-            aflTrace 100;
+            aflTrace 2083;
             nextCh state;
             if !ch = #"x"
             then
             (
-                aflTrace 101;
+                aflTrace 1953;
                 nextCh state;
                 if isHexadecimal (!ch)
                 then
                 (
-                    aflTrace 102;
+                    aflTrace 6141;
                     sy := WordConst;
                     id := readChars state isHexadecimal "0wx"
                 )
-                else (aflTrace 103; extraChars := [#"x", !ch]; ch := #"w")
+                else (aflTrace 14329; extraChars := [#"x", !ch]; ch := #"w")
             )
             else if isNumeric (!ch)
             then
             (
-                aflTrace 104;
+                aflTrace 15248;
                 sy := WordConst;
                 id := readChars state isNumeric "0w"
             )
-            else (aflTrace 105; extraChars := [!ch]; ch := #"w")
+            else (aflTrace 33119; extraChars := [!ch]; ch := #"w")
         )
         else if !ch = #"x" andalso !id = "0"
         then (* Hexadecimal integer constant. *)
         (
-            aflTrace 110;
+            aflTrace 39454;
             nextCh state;
             if isHexadecimal (!ch)
-            then (aflTrace 111; id := readChars state isHexadecimal "0x")
-            else (aflTrace 112; extraChars := [!ch]; ch := #"x")
+            then (aflTrace 1740; id := readChars state isHexadecimal "0x")
+            else (aflTrace 36782; extraChars := [!ch]; ch := #"x")
         )
         else if !ch = #"." orelse
                 !ch = #"E" orelse !ch = #"e"
         then (* possible real constant. *)
         (
-            aflTrace 120;
+            aflTrace 13032;
             if !ch = #"."
             then
             (
-               aflTrace 121;
+               aflTrace 46926;
                sy := RealConst;
                id := !id ^ ".";
                nextCh state;
                if not (isNumeric (!ch))
-               then (aflTrace 122; lexError(state, "malformed real number: " ^ !id ^ str(!ch)))
-               else (aflTrace 123; id := readChars state isNumeric (!id))
+               then (aflTrace 42591; lexError(state, "malformed real number: " ^ !id ^ str(!ch)))
+               else (aflTrace 45963; id := readChars state isNumeric (!id))
             )
-            else (aflTrace 124; ());
+            else (aflTrace 35714; ());
 
             if !ch = #"E" orelse !ch = #"e"
             then
             let
                 val eChar = !ch
             in
-                aflTrace 130;
+                aflTrace 27494;
                 nextCh state;
 
                 if !ch = #"~"
                 then
                 (
-                    aflTrace 131;
+                    aflTrace 14447;
                     nextCh state;
                     if isNumeric(!ch)
-                    then (aflTrace 132; sy := RealConst; id := readChars state isNumeric (!id ^ "E~"))
-                    else (aflTrace 133; extraChars := [#"~", !ch]; ch := eChar)
+                    then (aflTrace 29440; sy := RealConst; id := readChars state isNumeric (!id ^ "E~"))
+                    else (aflTrace 38619; extraChars := [#"~", !ch]; ch := eChar)
                 )
                 else
                 (
-                    aflTrace 134;
+                    aflTrace 18232;
                     if isNumeric(!ch)
-                    then (aflTrace 135; sy := RealConst; id := readChars state isNumeric (!id ^ "E"))
-                    else (aflTrace 136; extraChars := [!ch]; ch := eChar)
+                    then (aflTrace 53047; sy := RealConst; id := readChars state isNumeric (!id ^ "E"))
+                    else (aflTrace 56971; extraChars := [!ch]; ch := eChar)
                 )
             end
-            else (aflTrace 137; ())
+            else (aflTrace 426; ())
         )
-        else (aflTrace 140; ())
+        else (aflTrace 49730; ())
      );
 
     (* ================================================================ *)
-    (* parseString — IDs 200-299                                        *)
+    (* parseString                                                      *)
     (* ================================================================ *)
     fun parseString (state as { ch, id, ... }) =
     let
         fun getString (soFar: char list) =
          (
             case !ch of
-                #"\"" => (aflTrace 200; setSymbolEnd state; nextCh state; soFar)
+                #"\"" => (aflTrace 52811; setSymbolEnd state; nextCh state; soFar)
 
-            |   #"\n" => (aflTrace 201; setSymbolEnd state; nextCh state; raise EndOfLine)
+            |   #"\n" => (aflTrace 10464; setSymbolEnd state; nextCh state; raise EndOfLine)
 
             |   #"\\" =>
                     let
-                        val _ = nextCh state;
+                        val _ = (aflTrace 47952; nextCh state);
                         val next = !ch;
                         val _ = nextCh state;
                     in
                     if isWhiteSpace next
                     then
                         (
-                        aflTrace 210;
-                        if skipWhiteSpace state = #"\\" then (aflTrace 211; ())
+                        aflTrace 45754;
+                        if skipWhiteSpace state = #"\\" then (aflTrace 27697; ())
                         else
                             (
-                            aflTrace 212;
+                            aflTrace 22299;
                             lexError(state, "unexpected character " ^
                                String.toString (str (!ch)) ^" in \\ ... \\");
                             while !ch <> #"\\"  andalso !ch <> #"\"" andalso !ch <> eofChar
@@ -316,24 +324,24 @@ struct
                         )
                     else if next = #"^"
                     then    let
-                            val _ = aflTrace 220
+                            val _ = aflTrace 18211
                             val next2 = !ch;
                             val _ = nextCh state;
                         in  getString (next2 :: #"^" :: #"\\" :: soFar)
                         end
-                    else (aflTrace 221; getString (next :: #"\\" :: soFar))
+                    else (aflTrace 10190; getString (next :: #"\\" :: soFar))
                   end
 
             |   ch =>
                     (
-                     aflTrace 230;
+                     aflTrace 14111;
                      nextCh state;
-                     if ch = eofChar then (aflTrace 231; raise EndOfLine)
+                     if ch = eofChar then (aflTrace 62732; raise EndOfLine)
                      else if Char.isPrint ch
-                     then (aflTrace 232; getString (ch :: soFar))
+                     then (aflTrace 50037; getString (ch :: soFar))
                      else
                         (
-                        aflTrace 233;
+                        aflTrace 22060;
                         lexError(state, "unprintable character " ^ Char.toString ch ^ " found in string");
                         getString soFar
                         )
@@ -345,13 +353,13 @@ struct
 
         id := String.implode(List.rev(getString []))
             handle EndOfLine =>
-                (aflTrace 240; lexError(state, "no matching quote found on this line"))
+                (aflTrace 6699; lexError(state, "no matching quote found on this line"))
 
     end;
 
 
     (* ================================================================ *)
-    (* parseComment — IDs 300-399                                       *)
+    (* parseComment                                                     *)
     (* ================================================================ *)
     fun parseComment (state as { stream, ch, ... }) =
     let
@@ -361,15 +369,15 @@ struct
             if firstCh = eofChar
             then
             (
-               aflTrace 300;
+               aflTrace 6079;
                setSymbolEnd state;
                lexError(state, "end of file found in comment");
                firstCh
             )
-            else case (firstCh, getOpt(stream (), eofChar)) of
-                (#"*", #")") => (aflTrace 301; getOpt(stream (), eofChar))
-            |   (#"(", #"*") => (aflTrace 302; skipCommentBody (skipComment ()))
-            |   (_, nextCh) => (aflTrace 303; skipCommentBody nextCh)
+            else (aflTrace 21716; case (firstCh, getOpt(stream (), eofChar)) of
+                (#"*", #")") => (aflTrace 24899; getOpt(stream (), eofChar))
+            |   (#"(", #"*") => (aflTrace 6339; skipCommentBody (skipComment ()))
+            |   (_, nextCh) => (aflTrace 23527; skipCommentBody nextCh))
        in
          skipCommentBody (getOpt(stream (), eofChar))
        end;
@@ -380,7 +388,7 @@ struct
 
 
     (* ================================================================ *)
-    (* parseIdent — IDs 400-499                                         *)
+    (* parseIdent                                                       *)
     (* ================================================================ *)
     fun parseIdent (state as { ch, id, sy, ... }) charsetTest first =
     let
@@ -389,31 +397,31 @@ struct
         if !ch = #"."
         then
         let
-            val () = aflTrace 400
+            val () = aflTrace 55542
             val () = nextCh state;
             val c = !ch;
         in
              if isAlphabetic c
-               then (aflTrace 401; parseIdent state isAlphaNumeric (idVal ^ "."))
+               then (aflTrace 22542; parseIdent state isAlphaNumeric (idVal ^ "."))
 
              else if isOperator c
-               then (aflTrace 402; parseIdent state isOperator (idVal ^ "."))
+               then (aflTrace 39566; parseIdent state isOperator (idVal ^ "."))
 
-             else (aflTrace 403; lexError(state, "invalid identifier - "^ idVal ^ "." ^ str c))
+             else (aflTrace 17336; lexError(state, "invalid identifier - "^ idVal ^ "." ^ str c))
         end
         else
         (
-            aflTrace 410;
+            aflTrace 52896;
             id := idVal;
             sy := (if 0 < size idVal andalso String.str(String.sub(idVal, 0)) = "'"
-                   then (aflTrace 411; TypeIdent)
-                   else (aflTrace 412; lookup idVal))
+                   then (aflTrace 2848; TypeIdent)
+                   else (aflTrace 47824; lookup idVal))
         )
     end;
 
 
     (* ================================================================ *)
-    (* parseToken — IDs 500-599                                         *)
+    (* parseToken                                                       *)
     (* ================================================================ *)
     fun parseToken (state as { ch, id, sy, ... }) =
     let
@@ -424,118 +432,118 @@ struct
         case nextSym of
           #"~" =>
              (
-               aflTrace 500;
+               aflTrace 30109;
                nextCh state;
                if isNumeric (!ch)
                then
                (
-                 aflTrace 501;
+                 aflTrace 35143;
                  parseNumber(true, state);
                  id := "~" ^ !id
                )
                else
-                 (aflTrace 502; parseIdent state isOperator "~")
+                 (aflTrace 8181; parseIdent state isOperator "~")
              )
 
         | #"#" =>
               (
-                aflTrace 510;
+                aflTrace 63775;
                 nextCh state;
                 if !ch = #"\""
-                then (aflTrace 511; parseString state; sy := CharConst)
-                else (aflTrace 512; parseIdent state isOperator "#")
+                then (aflTrace 60444; parseString state; sy := CharConst)
+                else (aflTrace 24808; parseIdent state isOperator "#")
               )
 
-        | #"\"" => (aflTrace 520; parseString state; sy := StringConst)
+        | #"\"" => (aflTrace 5165; parseString state; sy := StringConst)
 
         | #";" =>
             (
-                aflTrace 521;
+                aflTrace 36179;
                 sy := Semicolon;
                 ch := #" "
             )
 
-        | #"," => (aflTrace 522; sy := Comma; nextCh state)
+        | #"," => (aflTrace 19214; sy := Comma; nextCh state)
 
         | #"(" =>
               (
-                aflTrace 530;
+                aflTrace 54356;
                 nextCh state;
-                if !ch <> #"*" then (aflTrace 531; sy := LeftParen) else (aflTrace 532; parseComment state)
+                if !ch <> #"*" then (aflTrace 41199; sy := LeftParen) else (aflTrace 40536; parseComment state)
               )
 
-        | #")" => (aflTrace 533; sy := RightParen; nextCh state)
+        | #")" => (aflTrace 58029; sy := RightParen; nextCh state)
 
-        | #"[" => (aflTrace 534; sy := LeftBrack; nextCh state)
+        | #"[" => (aflTrace 56473; sy := LeftBrack; nextCh state)
 
-        | #"]" => (aflTrace 535; sy := RightBrack; nextCh state)
+        | #"]" => (aflTrace 23701; sy := RightBrack; nextCh state)
 
-        | #"_" => (aflTrace 536; sy := Underline; nextCh state)
+        | #"_" => (aflTrace 37838; sy := Underline; nextCh state)
 
-        | #"{" => (aflTrace 537; sy := LeftCurly; nextCh state)
+        | #"{" => (aflTrace 12602; sy := LeftCurly; nextCh state)
 
-        | #"}" => (aflTrace 538; sy := RightCurly; nextCh state)
+        | #"}" => (aflTrace 46175; sy := RightCurly; nextCh state)
 
         | #"." =>
             (
-                aflTrace 540;
+                aflTrace 4559;
                 nextCh state;
                 if !ch <> #"."
-                then (aflTrace 541; lexError(state, "unknown symbol ." ^ str(!ch)))
+                then (aflTrace 3004; lexError(state, "unknown symbol ." ^ str(!ch)))
                 else
                 (
-                    aflTrace 542;
+                    aflTrace 43337;
                     setSymbolEnd state;
                     nextCh state;
                     if !ch <> #"."
-                    then (aflTrace 543; lexError(state, "unknown symbol .." ^ str(!ch)))
-                    else (aflTrace 544; sy := ThreeDots; setSymbolEnd state; nextCh state)
+                    then (aflTrace 14936; lexError(state, "unknown symbol .." ^ str(!ch)))
+                    else (aflTrace 50664; sy := ThreeDots; setSymbolEnd state; nextCh state)
                 )
             )
 
          | firstCh =>
             (
-            aflTrace 550;
+            aflTrace 18966;
             if firstCh = eofChar
-            then (aflTrace 551; sy := AbortParse)
+            then (aflTrace 64568; sy := AbortParse)
 
             else if isNumeric firstCh
-            then (aflTrace 552; parseNumber(false, state))
+            then (aflTrace 5230; parseNumber(false, state))
 
             else if isAlphabetic firstCh orelse firstCh = #"'"
-            then (aflTrace 553; parseIdent state isAlphaNumeric "")
+            then (aflTrace 56055; parseIdent state isAlphaNumeric "")
 
             else if isOperator firstCh
-            then (aflTrace 554; parseIdent state isOperator "")
+            then (aflTrace 15257; parseIdent state isOperator "")
 
             else let
-                val _ = aflTrace 555
+                val _ = aflTrace 56786
                 val printableFirstCh = Char.toString firstCh
             in
                 lexError(state, "unknown character \"" ^ printableFirstCh ^ "\"");
                 nextCh state
             end
             );
-        if (!sy = Othersy) then (aflTrace 560; parseToken state) else (aflTrace 561; ())
+        if (!sy = Othersy) then (aflTrace 6620; parseToken state) else (aflTrace 24912; ())
     end;
 
     (* ================================================================ *)
-    (* insymbol — IDs 600-699                                           *)
+    (* insymbol                                                         *)
     (* ================================================================ *)
     fun insymbol (state as {sy,pushedSym,...}:lexan) =
-    if ! pushedSym <> Othersy then (aflTrace 600; pushedSym := Othersy)
+    if ! pushedSym <> Othersy then (aflTrace 18218; pushedSym := Othersy)
     else
     (
-        aflTrace 601;
+        aflTrace 29715;
         if ! sy = AbortParse
         then
         (
-            aflTrace 602;
+            aflTrace 41661;
             setSymbolStart state;
             lexError(state, "unexpected end of file encountered");
             raise InternalError "end of file"
         )
-        else (aflTrace 603; ());
+        else (aflTrace 54665; ());
 
         sy := Othersy;
 
@@ -543,11 +551,11 @@ struct
     );
 
     fun pushBackSymbol ({pushedSym,...}:lexan, sym) =
-        if !pushedSym <> Othersy then (aflTrace 610; raise InternalError "Attempt to push two parentheses")
-        else (aflTrace 611; pushedSym := sym)
+        if !pushedSym <> Othersy then (aflTrace 23910; raise InternalError "Attempt to push two parentheses")
+        else (aflTrace 10660; pushedSym := sym)
 
    fun sy ({sy=ref sy, pushedSym = ref pushed, ...}:lexan) =
-        if pushed <> Othersy then (aflTrace 620; pushed) else (aflTrace 621; sy);
+        if pushed <> Othersy then (aflTrace 24261; pushed) else (aflTrace 23284; sy);
 
    fun id ({id=ref id,...}:lexan) = id;
 

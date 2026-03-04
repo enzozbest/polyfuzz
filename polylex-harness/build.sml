@@ -67,6 +67,6 @@ PolyML.export("polylex_fuzz", Main.main);
 
 val () = print "\nExport complete!\n";
 val () = print "Now compile and link:\n";
-val () = print "  afl-clang-fast -c polylex_c_shim.c -o polylex_c_shim.o\n";
+val () = print "  cc -c polylex_c_shim.c -o polylex_c_shim.o\n";
 val () = print "  afl-clang-fast -o polylex_fuzz polylex_fuzz.o polylex_c_shim.o \\\n";
 val () = print "      -L/usr/local/lib -Wl,-rpath,/usr/local/lib -lpolymain -lpolyml\n";
