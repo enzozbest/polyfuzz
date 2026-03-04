@@ -10,7 +10,6 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -29,7 +28,6 @@ from polyfuzz_orchestrator.analytics.writers import (
     write_growth_curves,
     write_summary_json,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

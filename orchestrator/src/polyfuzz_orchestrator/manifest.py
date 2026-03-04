@@ -6,7 +6,7 @@ import platform
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -101,7 +101,7 @@ def collect_metadata(config: PipelineConfig) -> dict:
             "node": uname.node,
             "python_version": sys.version,
         },
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -200,7 +200,7 @@ def write_experiment_manifest(
             "stage_timeout_s": config.stage_timeout_s,
             "afl_exec_timeout_ms": config.afl_exec_timeout_ms,
         },
-        "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at": datetime.now(UTC).isoformat(),
         "campaigns": [],
     }
     _atomic_write_json(manifest_path, data)
@@ -230,7 +230,7 @@ def update_experiment_manifest(
         "campaign_index": campaign_index,
         "campaign_seed": campaign_seed,
         "status": status,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(UTC).isoformat(),
     }
 
     # Update existing entry or append new one

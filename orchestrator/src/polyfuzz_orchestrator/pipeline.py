@@ -4,7 +4,7 @@ from rich.console import Console
 
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PipelineError, PreflightError
-from polyfuzz_orchestrator.layout import create_campaign_layout
+from polyfuzz_orchestrator.layout import create_campaign_layout, create_experiment_layout
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult, verify_components
 from polyfuzz_orchestrator.stages import (
     AflStage,

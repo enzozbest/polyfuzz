@@ -21,7 +21,6 @@ from polyfuzz_orchestrator.analytics.aggregator import (
 )
 from polyfuzz_orchestrator.analytics.metrics import CampaignMetrics
 
-
 # ---------------------------------------------------------------------------
 # Fixtures: helper to build mock CampaignMetrics
 # ---------------------------------------------------------------------------

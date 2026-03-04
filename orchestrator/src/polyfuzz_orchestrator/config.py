@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 # Fields that should be converted from strings to Path objects
 _PATH_FIELDS = frozenset({"work_dir", "smlgen_jar", "polylex_bin", "diffcomp_bin", "afl_fuzz_bin"})
 
@@ -21,15 +20,15 @@ class PipelineConfig:
     tests_per_campaign: int = 100
     seed: int | None = None  # None = random
     num_campaigns: int = 1  # Number of campaigns to run (1 = single-campaign mode)
-    afl_timeout_s: int = 300  # AFL++ campaign duration via -V flag
+    afl_timeout_s: int = 10  # AFL++ campaign duration via -V flag
     afl_exec_timeout_ms: int | None = None  # Per-input timeout via -t, None = auto-calibrate
     stage_timeout_s: int = 600  # Orchestrator subprocess timeout
 
     # Paths to components (discovered or configured)
-    smlgen_jar: Path = field(default_factory=lambda: Path("smlgen/build/libs/smlgen.jar"))
+    smlgen_jar: Path = field(default_factory=lambda: Path("smlgen/build/install/smlgen/bin/smlgen"))
     polylex_bin: Path = field(default_factory=lambda: Path("polylex-harness/polylex_fuzz"))
     diffcomp_bin: Path = field(default_factory=lambda: Path("diffcomp/build/install/diffcomp/bin/diffcomp"))
-    afl_fuzz_bin: Path = field(default_factory=lambda: Path("usr/bin/afl-fuzz"))
+    afl_fuzz_bin: Path = field(default_factory=lambda: Path("/usr/local/bin/afl-fuzz"))
 
     def __post_init__(self) -> None:
         """Validate timeout hierarchy."""

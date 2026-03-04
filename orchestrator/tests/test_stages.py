@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import stat
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -12,7 +11,6 @@ import pytest
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PreflightError
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult
-
 
 # ---------------------------------------------------------------------------
 # Helpers

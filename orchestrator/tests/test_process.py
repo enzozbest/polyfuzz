@@ -1,10 +1,7 @@
 """Tests for ProcessRunner and verify_components."""
 
-import os
 import stat
 from pathlib import Path
-
-import pytest
 
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult, verify_components

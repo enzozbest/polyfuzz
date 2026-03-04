@@ -47,10 +47,7 @@ class SmlgenStage(Stage):
         corpus_dir.mkdir(parents=True, exist_ok=True)
 
         cmd = [
-            "java",
-            "-cp",
-            str(config.smlgen_jar),
-            "bestetti.enzo.smlgen.MainKt",
+            f"{str(config.smlgen_jar)}",
             "-n",
             str(config.tests_per_campaign),
             "-o",

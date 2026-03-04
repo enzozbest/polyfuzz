@@ -5,14 +5,13 @@ from __future__ import annotations
 import contextlib
 import stat
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import patch
 
 import pytest
 
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PipelineError, PreflightError
-from polyfuzz_orchestrator.process import ProcessRunner, StageResult
-
+from polyfuzz_orchestrator.process import StageResult
 
 # ---------------------------------------------------------------------------
 # Helpers

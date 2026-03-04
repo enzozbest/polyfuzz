@@ -13,7 +13,6 @@ from polyfuzz_orchestrator.analytics.parsers import (
     parse_plot_data,
 )
 
-
 # ---------------------------------------------------------------------------
 # parse_fuzzer_stats tests
 # ---------------------------------------------------------------------------

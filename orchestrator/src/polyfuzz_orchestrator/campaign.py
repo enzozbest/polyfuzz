@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from rich.console import Console
@@ -104,7 +104,7 @@ class CampaignOrchestrator:
             afl_fuzz_bin=self._config.afl_fuzz_bin,
         )
 
-        start_time = datetime.now(timezone.utc).isoformat()
+        start_time = datetime.now(UTC).isoformat()
         try:
             executor = PipelineExecutor(campaign_config)
             results = executor.run()
@@ -113,7 +113,7 @@ class CampaignOrchestrator:
                 f"[bold red]Campaign {index + 1}/{self._config.num_campaigns} failed[/bold red]"
             )
             raise
-        end_time = datetime.now(timezone.utc).isoformat()
+        end_time = datetime.now(UTC).isoformat()
 
         manifest_data = build_campaign_manifest(
             index, int(master_seed), campaign_seed, self._config, results, metadata,
