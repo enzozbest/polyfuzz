@@ -6,7 +6,7 @@ package lexer
  * Used by PolylexInvoker and VerilexInvoker to return token streams or error information to the comparison engine.
  */
 sealed class LexerResult {
-    data class Success(val tokenStream: String) : LexerResult()
+    data class Success(val tokenStream: String, val errorCount: Int = 0) : LexerResult()
 
     /**
      * Tokenisation failed. [error] describes what went wrong.

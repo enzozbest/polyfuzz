@@ -24,18 +24,30 @@ object PolylexInvoker {
                     .redirectErrorStream(true)
                     .start()
 
-                process.outputStream.bufferedWriter().use { it.write(smlSource) }
+                process.outputStream.bufferedWriter(Charsets.ISO_8859_1).use { it.write(smlSource) }
 
                 // Read all output (stdout + merged stderr) BEFORE waitFor to avoid deadlock
                 val output = process.inputStream.bufferedReader().readText()
                 val exitCode = process.waitFor()
 
                 if (exitCode != 0) {
-                    LexerResult.Failure("polylex_fuzz exited with code $exitCode: $output")
+                    val truncated = if (output.length > 200) output.take(200) + "..." else output
+                    LexerResult.Failure("polylex_fuzz exited with code $exitCode: $truncated")
                 } else if (output.isBlank()) {
                     LexerResult.Failure("polylex_fuzz produced empty output")
                 } else {
-                    LexerResult.Success(output.trimEnd().lines().joinToString(" "))
+                    // Count "Lex error" diagnostic lines before filtering them out.
+                    // These correspond to verilex ERROR tokens (unrecognised characters).
+                    val allLines = output.trimEnd().lines()
+                    val errorCount = allLines.count { it.startsWith("Lex error") }
+                    val tokenLines = allLines
+                        .filterNot { it.startsWith("Lex error") || it.startsWith("Lex warning") }
+                    val tokenStream = tokenLines.joinToString(" ")
+                    if (tokenStream.isBlank() && errorCount == 0) {
+                        LexerResult.Failure("polylex_fuzz produced only error diagnostics: $output")
+                    } else {
+                        LexerResult.Success(tokenStream, errorCount)
+                    }
                 }
             } catch (e: Exception) {
                 LexerResult.Failure("polylex_fuzz invocation failed: ${e.message}")

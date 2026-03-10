@@ -1,6 +1,7 @@
 package batch
 
 import comparison.ComparisonEngine
+import comparison.ComparisonResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -38,7 +39,9 @@ object BatchOrchestrator {
         oracleTokenise: (String) -> LexerResult,
         polylexTokenise: suspend (String) -> LexerResult,
     ): BatchFileResult {
-        val source = file.readText()
+        val source = file.readText(Charsets.ISO_8859_1)
+        if (source.contains("(*"))
+            return BatchFileResult.Success(file, ComparisonResult.CommentSkipped)
         val oracleResult = oracleTokenise(source)
         val polylexResult = polylexTokenise(source)
 
@@ -50,7 +53,10 @@ object BatchOrchestrator {
             oracleResult is LexerResult.Success && polylexResult is LexerResult.Success ->
                 BatchFileResult.Success(
                     file,
-                    ComparisonEngine.compare(oracleResult.tokenStream, polylexResult.tokenStream)
+                    ComparisonEngine.compare(
+                        oracleResult.tokenStream, polylexResult.tokenStream,
+                        oracleResult.errorCount, polylexResult.errorCount,
+                    )
                 )
             else ->
                 BatchFileResult.Failure(file, "unexpected result combination") //Logically unreachable due to sealed class, but required for exhaustiveness

@@ -10,25 +10,25 @@ class ComparisonEngineTest {
 
     @Test
     fun `identical streams return Match`() {
-        val result = ComparisonEngine.compare("VAL ID(x) = INT(42)", "VAL ID(x) = INT(42)")
+        val result = ComparisonEngine.compare("VAL ID(x) = INT(42)", "VAL ID(x) = INT(42)", 0, 0)
         assertIs<ComparisonResult.Match>(result)
     }
 
     @Test
     fun `different streams return Diff`() {
-        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(y)")
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(y)", 0, 0)
         assertIs<ComparisonResult.Diff>(result)
     }
 
     @Test
     fun `empty identical streams return Match`() {
-        val result = ComparisonEngine.compare("", "")
+        val result = ComparisonEngine.compare("", "", 0, 0)
         assertIs<ComparisonResult.Match>(result)
     }
 
     @Test
     fun `oracle invariant - Diff never empty for different streams`() {
-        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(y)")
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(y)", 0, 0)
         assertIs<ComparisonResult.Diff>(result)
         assertTrue(result.mismatches.isNotEmpty(), "Diff should contain at least one mismatch")
     }
@@ -36,7 +36,7 @@ class ComparisonEngineTest {
     @Test
     fun `oracle invariant - ORACLE_ONLY has null polylexToken`() {
         // oracle has an extra token that polylex does not have
-        val result = ComparisonEngine.compare("VAL ID(x) INT(42)", "VAL ID(x)")
+        val result = ComparisonEngine.compare("VAL ID(x) INT(42)", "VAL ID(x)", 0, 0)
         assertIs<ComparisonResult.Diff>(result)
         val oracleOnlyMismatch = result.mismatches.firstOrNull { it.type == MismatchType.ORACLE_ONLY }
         assertNotNull(oracleOnlyMismatch, "Expected an ORACLE_ONLY mismatch")
@@ -46,11 +46,39 @@ class ComparisonEngineTest {
     @Test
     fun `oracle invariant - POLYLEX_ONLY has null oracleToken`() {
         // polylex has an extra token that oracle does not have
-        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(x) INT(42)")
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(x) INT(42)", 0, 0)
         assertIs<ComparisonResult.Diff>(result)
         val polylexOnlyMismatch = result.mismatches.firstOrNull { it.type == MismatchType.POLYLEX_ONLY }
         assertNotNull(polylexOnlyMismatch, "Expected a POLYLEX_ONLY mismatch")
         assertEquals(null, polylexOnlyMismatch.oracleToken, "POLYLEX_ONLY mismatch must have null oracleToken")
+    }
+
+    // --- ErrorMismatch coverage ---
+
+    @Test
+    fun `mismatched error counts return ErrorMismatch`() {
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(x)", 2, 0)
+        assertIs<ComparisonResult.ErrorMismatch>(result)
+        assertEquals(2, result.oracleErrors)
+        assertEquals(0, result.polylexErrors)
+    }
+
+    @Test
+    fun `mismatched error counts with different streams return Diff`() {
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(y)", 2, 0)
+        assertIs<ComparisonResult.Diff>(result)
+    }
+
+    @Test
+    fun `equal non-zero error counts with identical streams return Match`() {
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(x)", 3, 3)
+        assertIs<ComparisonResult.Match>(result)
+    }
+
+    @Test
+    fun `equal error counts with different streams return Diff`() {
+        val result = ComparisonEngine.compare("VAL ID(x)", "VAL ID(y)", 1, 1)
+        assertIs<ComparisonResult.Diff>(result)
     }
 
     // --- normaliseRealExponents coverage ---
@@ -80,7 +108,7 @@ class ComparisonEngineTest {
 
     @Test
     fun `compare matches when only REAL exponent case differs`() {
-        val result = ComparisonEngine.compare("REAL(1.0E5)", "REAL(1.0e5)")
+        val result = ComparisonEngine.compare("REAL(1.0E5)", "REAL(1.0e5)", 0, 0)
         assertIs<ComparisonResult.Match>(result)
     }
 

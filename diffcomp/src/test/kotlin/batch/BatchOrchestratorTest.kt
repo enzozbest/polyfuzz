@@ -27,8 +27,8 @@ class BatchOrchestratorTest {
                 createTempSmlFile(tempDir, "c.sml", "val z = 3"),
             )
             val tokens = "VAL ID(x) INT(1)"
-            val oracle: (String) -> LexerResult = { LexerResult.Success(tokens) }
-            val polylex: suspend (String) -> LexerResult = { LexerResult.Success(tokens) }
+            val oracle: (String) -> LexerResult = { LexerResult.Success(tokens, 0) }
+            val polylex: suspend (String) -> LexerResult = { LexerResult.Success(tokens, 0) }
 
             val results = BatchOrchestrator.processAll(files, oracle, polylex)
 
@@ -49,7 +49,7 @@ class BatchOrchestratorTest {
         try {
             val files = listOf(createTempSmlFile(tempDir, "a.sml", "val x = 1"))
             val oracle: (String) -> LexerResult = { LexerResult.Failure("oracle parse error") }
-            val polylex: suspend (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)") }
+            val polylex: suspend (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)", 0) }
 
             val results = BatchOrchestrator.processAll(files, oracle, polylex)
 
@@ -69,7 +69,7 @@ class BatchOrchestratorTest {
         val tempDir = createTempDirectory("orchestrator-polylex-fail-test").toFile()
         try {
             val files = listOf(createTempSmlFile(tempDir, "a.sml", "val x = 1"))
-            val oracle: (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)") }
+            val oracle: (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)", 0) }
             val polylex: suspend (String) -> LexerResult = { LexerResult.Failure("polylex binary error") }
 
             val results = BatchOrchestrator.processAll(files, oracle, polylex)
@@ -97,9 +97,9 @@ class BatchOrchestratorTest {
             val tokens = "VAL ID(x) INT(1)"
             // Oracle fails for the 3rd file (based on content marker)
             val oracle: (String) -> LexerResult = { src ->
-                if (src.contains("z")) LexerResult.Failure("oracle error on z") else LexerResult.Success(tokens)
+                if (src.contains("z")) LexerResult.Failure("oracle error on z") else LexerResult.Success(tokens, 0)
             }
-            val polylex: suspend (String) -> LexerResult = { LexerResult.Success(tokens) }
+            val polylex: suspend (String) -> LexerResult = { LexerResult.Success(tokens, 0) }
 
             val results = BatchOrchestrator.processAll(files, oracle, polylex)
 
@@ -121,11 +121,11 @@ class BatchOrchestratorTest {
             val delayMs = 100L
             val files = (1..fileCount).map { createTempSmlFile(tempDir, "file$it.sml", "val x$it = $it") }
             val counter = AtomicInteger(0)
-            val oracle: (String) -> LexerResult = { LexerResult.Success("VAL") }
+            val oracle: (String) -> LexerResult = { LexerResult.Success("VAL", 0) }
             val polylex: suspend (String) -> LexerResult = {
                 counter.incrementAndGet()
                 delay(delayMs)
-                LexerResult.Success("VAL")
+                LexerResult.Success("VAL", 0)
             }
 
             val startMs = System.currentTimeMillis()
@@ -139,6 +139,67 @@ class BatchOrchestratorTest {
                 elapsed < fileCount * delayMs,
                 "Should be concurrent: elapsed=${elapsed}ms but sequential would be ${fileCount * delayMs}ms"
             )
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `file containing comment syntax returns CommentSkipped`() = runBlocking {
+        val tempDir = createTempDirectory("orchestrator-comment-test").toFile()
+        try {
+            val files = listOf(createTempSmlFile(tempDir, "a.sml", "(* this is a comment *) val x = 1"))
+            val oracleCalled = AtomicInteger(0)
+            val polylexCalled = AtomicInteger(0)
+            val oracle: (String) -> LexerResult = { oracleCalled.incrementAndGet(); LexerResult.Success("VAL", 0) }
+            val polylex: suspend (String) -> LexerResult = { polylexCalled.incrementAndGet(); LexerResult.Success("VAL", 0) }
+
+            val results = BatchOrchestrator.processAll(files, oracle, polylex)
+
+            assertEquals(1, results.size)
+            assertIs<BatchFileResult.Success>(results[0])
+            assertIs<ComparisonResult.CommentSkipped>((results[0] as BatchFileResult.Success).comparisonResult)
+            assertEquals(0, oracleCalled.get(), "Oracle should not be invoked for comment-containing files")
+            assertEquals(0, polylexCalled.get(), "Polylex should not be invoked for comment-containing files")
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `file without comment syntax compares normally`() = runBlocking {
+        val tempDir = createTempDirectory("orchestrator-no-comment-test").toFile()
+        try {
+            val files = listOf(createTempSmlFile(tempDir, "a.sml", "val x = 1"))
+            val oracle: (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)", 0) }
+            val polylex: suspend (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)", 0) }
+
+            val results = BatchOrchestrator.processAll(files, oracle, polylex)
+
+            assertEquals(1, results.size)
+            assertIs<BatchFileResult.Success>(results[0])
+            assertIs<ComparisonResult.Match>((results[0] as BatchFileResult.Success).comparisonResult)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `error count mismatch produces ErrorMismatch result`() = runBlocking {
+        val tempDir = createTempDirectory("orchestrator-error-mismatch-test").toFile()
+        try {
+            val files = listOf(createTempSmlFile(tempDir, "a.sml", "val x = 1"))
+            val oracle: (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)", 2) }
+            val polylex: suspend (String) -> LexerResult = { LexerResult.Success("VAL ID(x) INT(1)", 0) }
+
+            val results = BatchOrchestrator.processAll(files, oracle, polylex)
+
+            assertEquals(1, results.size)
+            assertIs<BatchFileResult.Success>(results[0])
+            val cr = (results[0] as BatchFileResult.Success).comparisonResult
+            assertIs<ComparisonResult.ErrorMismatch>(cr)
+            assertEquals(2, cr.oracleErrors)
+            assertEquals(0, cr.polylexErrors)
         } finally {
             tempDir.deleteRecursively()
         }

@@ -125,6 +125,21 @@ class ReportWriterTest {
     }
 
     @Test
+    fun `comment skipped result produces status COMMENT_SKIPPED`() {
+        val outputDir = createTempDirectory("report-test").toFile()
+        val result = BatchFileResult.Success(File("commented.sml"), ComparisonResult.CommentSkipped)
+
+        ReportWriter.writeAll(listOf(result), outputDir)
+
+        val reportFile = File(outputDir, "commented.json")
+        val report = json.decodeFromString<FileReport>(reportFile.readText())
+        assertEquals("COMMENT_SKIPPED", report.status)
+        assertEquals(0, report.mismatchCount)
+        assertTrue(report.mismatches.isEmpty())
+        assertNull(report.error)
+    }
+
+    @Test
     fun `writeAll with empty results list produces no files`() {
         val outputDir = createTempDirectory("report-empty-test").toFile()
 

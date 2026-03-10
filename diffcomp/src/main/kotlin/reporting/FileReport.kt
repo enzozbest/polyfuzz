@@ -16,10 +16,12 @@ data class MismatchReport(
 @Serializable
 data class FileReport(
     val filePath: String,
-    val status: String,         // "MATCH", "DIFF", "FAILURE"
+    val status: String,         // "MATCH", "DIFF", "ERROR_MISMATCH", "COMMENT_SKIPPED", "FAILURE"
     val mismatchCount: Int,
     val mismatches: List<MismatchReport>,
     val error: String?,
+    val oracleErrors: Int? = null,
+    val polylexErrors: Int? = null,
 )
 
 fun BatchFileResult.toFileReport(): FileReport = when (this) {
@@ -44,6 +46,22 @@ fun BatchFileResult.toFileReport(): FileReport = when (this) {
                     polylexToken = m.polylexToken,
                 )
             },
+            error = null,
+        )
+        is ComparisonResult.ErrorMismatch -> FileReport(
+            filePath = file.absoluteFile.invariantSeparatorsPath,
+            status = "ERROR_MISMATCH",
+            mismatchCount = 0,
+            mismatches = emptyList(),
+            error = null,
+            oracleErrors = cr.oracleErrors,
+            polylexErrors = cr.polylexErrors,
+        )
+        is ComparisonResult.CommentSkipped -> FileReport(
+            filePath = file.absoluteFile.invariantSeparatorsPath,
+            status = "COMMENT_SKIPPED",
+            mismatchCount = 0,
+            mismatches = emptyList(),
             error = null,
         )
     }

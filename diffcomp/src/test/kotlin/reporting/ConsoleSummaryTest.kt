@@ -120,6 +120,24 @@ class ConsoleSummaryTest {
     }
 
     @Test
+    fun `prints comment skipped count and lists skipped files`() {
+        val results = listOf(
+            BatchFileResult.Success(File("a.sml"), ComparisonResult.Match),
+            BatchFileResult.Success(File("commented.sml"), ComparisonResult.CommentSkipped),
+            BatchFileResult.Success(File("also-commented.sml"), ComparisonResult.CommentSkipped),
+        )
+        val output = mutableListOf<String>()
+
+        ConsoleSummary.print(results, output::add)
+
+        val joined = output.joinToString("\n")
+        assertTrue(joined.contains("Comment skipped     : 2"), "Expected comment skipped = 2, got:\n$joined")
+        assertTrue(joined.contains("=== Comment Skipped ==="), "Expected Comment Skipped section, got:\n$joined")
+        assertTrue(joined.contains("commented.sml"), "Expected commented.sml in output, got:\n$joined")
+        assertTrue(joined.contains("also-commented.sml"), "Expected also-commented.sml in output, got:\n$joined")
+    }
+
+    @Test
     fun `prints summary with all zeros for empty results`() {
         val output = mutableListOf<String>()
 

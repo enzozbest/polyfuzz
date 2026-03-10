@@ -1,6 +1,8 @@
 package lexer
 
+import tokenizer.SMLTokenType
 import tokenizer.SMLTokeniser
+import tokenizer.TokenSequence
 import tokenizer.TokenisationError
 
 /**
@@ -20,12 +22,13 @@ object VerilexInvoker {
      */
     fun invoke(smlSource: String): LexerResult =
         try {
-            val tokens = SMLTokeniser.tokenise(smlSource)
-            val compact = tokens.withoutTrivia().toCompactString()
-            if (compact.isBlank()) {
+            val allTokens = SMLTokeniser.tokenise(smlSource).withoutTrivia()
+            val errorCount = allTokens.count { it.type is SMLTokenType.Error }
+            val compact = TokenSequence(allTokens.filter { it.type !is SMLTokenType.Error }).toCompactString()
+            if (compact.isBlank() && errorCount == 0) {
                 LexerResult.Failure("verilex produced empty token stream")
             } else {
-                LexerResult.Success(compact)
+                LexerResult.Success(compact, errorCount)
             }
         } catch (e: TokenisationError) {
             LexerResult.Failure("verilex tokenisation failed at position ${e.position}: ${e.message}")
