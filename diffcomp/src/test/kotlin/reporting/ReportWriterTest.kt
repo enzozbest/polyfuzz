@@ -51,7 +51,7 @@ class ReportWriterTest {
 
         val reportFile = File(outputDir, "test.json")
         val report = json.decodeFromString<FileReport>(reportFile.readText())
-        assertEquals("MATCH", report.status)
+        assertEquals(Status.MATCH, report.status)
         assertEquals(0, report.mismatchCount)
         assertTrue(report.mismatches.isEmpty())
         assertNull(report.error)
@@ -70,15 +70,15 @@ class ReportWriterTest {
 
         val reportFile = File(outputDir, "diff.json")
         val report = json.decodeFromString<FileReport>(reportFile.readText())
-        assertEquals("DIFF", report.status)
+        assertEquals(Status.DIFF, report.status)
         assertEquals(2, report.mismatchCount)
         assertEquals(2, report.mismatches.size)
-        assertEquals("ORACLE_ONLY", report.mismatches[0].type)
+        assertEquals(MismatchType.ORACLE_ONLY, report.mismatches[0].type)
         assertEquals(0, report.mismatches[0].oracleIndex)
         assertEquals(-1, report.mismatches[0].polylexIndex)
         assertEquals("oracleTok", report.mismatches[0].oracleToken)
         assertNull(report.mismatches[0].polylexToken)
-        assertEquals("TOKEN_TYPE_MISMATCH", report.mismatches[1].type)
+        assertEquals(MismatchType.TOKEN_TYPE_MISMATCH, report.mismatches[1].type)
         assertEquals(2, report.mismatches[1].oracleIndex)
         assertEquals(3, report.mismatches[1].polylexIndex)
         assertEquals("oracleTok2", report.mismatches[1].oracleToken)
@@ -95,7 +95,7 @@ class ReportWriterTest {
 
         val reportFile = File(outputDir, "fail.json")
         val report = json.decodeFromString<FileReport>(reportFile.readText())
-        assertEquals("FAILURE", report.status)
+        assertEquals(Status.FAILURE, report.status)
         assertEquals("some error", report.error)
         assertEquals(0, report.mismatchCount)
         assertTrue(report.mismatches.isEmpty())
@@ -133,7 +133,7 @@ class ReportWriterTest {
 
         val reportFile = File(outputDir, "commented.json")
         val report = json.decodeFromString<FileReport>(reportFile.readText())
-        assertEquals("COMMENT_SKIPPED", report.status)
+        assertEquals(Status.COMMENT_SKIPPED, report.status)
         assertEquals(0, report.mismatchCount)
         assertTrue(report.mismatches.isEmpty())
         assertNull(report.error)
@@ -142,7 +142,6 @@ class ReportWriterTest {
     @Test
     fun `writeAll with empty results list produces no files`() {
         val outputDir = createTempDirectory("report-empty-test").toFile()
-
         ReportWriter.writeAll(emptyList(), outputDir)
 
         val files = outputDir.listFiles() ?: emptyArray()

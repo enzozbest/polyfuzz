@@ -2,13 +2,14 @@ package reporting
 
 import batch.BatchFileResult
 import comparison.ComparisonResult
+import comparison.MismatchType
 import kotlinx.serialization.Serializable
 
 enum class Status { MATCH, DIFF, ERROR_MISMATCH, COMMENT_SKIPPED, FAILURE }
 
 @Serializable
 data class MismatchReport(
-    val type: String,
+    val type: MismatchType,
     val oracleIndex: Int,
     val polylexIndex: Int,
     val oracleToken: String?,
@@ -41,7 +42,7 @@ fun BatchFileResult.toFileReport(): FileReport = when (this) {
             mismatchCount = cr.mismatchCount,
             mismatches = cr.mismatches.map { m ->
                 MismatchReport(
-                    type = m.type.name,
+                    type = m.type,
                     oracleIndex = m.oracleIndex,
                     polylexIndex = m.polylexIndex,
                     oracleToken = m.oracleToken,
