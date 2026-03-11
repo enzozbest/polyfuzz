@@ -95,8 +95,19 @@ fun String.toTokenList(): List<String> {
     var depth = 0
     for (ch in this) {
         when {
-            ch == '(' -> { depth++; current.append(ch) }
-            ch == ')' -> { depth--; current.append(ch) }
+            ch == '(' -> {
+                // Only enter paren-tracking mode if this '(' is part of a token payload
+                // (e.g., ID(x), STRING(hello world)), not a bare '(' SML token.
+                // A payload '(' always follows an alphanumeric or underscore character.
+                if (current.isNotEmpty() && current.last().let { it.isLetterOrDigit() || it == '_' }) {
+                    depth++
+                }
+                current.append(ch)
+            }
+            ch == ')' -> {
+                if (depth > 0) depth--
+                current.append(ch)
+            }
             ch == ' ' && depth == 0 -> {
                 if (current.isNotEmpty()) {
                     tokens.add(current.toString())

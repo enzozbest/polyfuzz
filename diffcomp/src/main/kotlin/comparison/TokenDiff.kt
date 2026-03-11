@@ -112,8 +112,8 @@ data class CompactToken(val typeTag: String, val lexeme: String?)
 
 fun parseCompactToken(token: String): CompactToken {
     val parenIdx = token.indexOf('(')
-    return if (parenIdx == -1) {
-        CompactToken(token, null)  // bare tag: "VAL", "=", "("
+    return if (parenIdx == -1 || parenIdx == 0 || !token.endsWith(')')) {
+        CompactToken(token, null)  // bare tag: "VAL", "=", "(", ")"
     } else {
         CompactToken(
             typeTag = token.substring(0, parenIdx),

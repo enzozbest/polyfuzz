@@ -54,4 +54,5 @@ class VerilexInvokerTest {
         assertIs<LexerResult.Success>(result)
         assertEquals(0, result.errorCount, "Expected zero errorCount for valid SML")
     }
+
 }
