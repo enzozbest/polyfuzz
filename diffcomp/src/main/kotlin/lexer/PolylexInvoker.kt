@@ -37,7 +37,6 @@ object PolylexInvoker {
                     LexerResult.Failure("polylex_fuzz produced empty output")
                 } else {
                     // Count "Lex error" diagnostic lines before filtering them out.
-                    // These correspond to verilex ERROR tokens (unrecognised characters).
                     val allLines = output.trimEnd().lines()
                     val errorCount = allLines.count { it.startsWith("Lex error") }
                     val tokenLines = allLines

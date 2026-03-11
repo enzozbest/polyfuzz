@@ -4,6 +4,8 @@ import batch.BatchFileResult
 import comparison.ComparisonResult
 import kotlinx.serialization.Serializable
 
+enum class Status { MATCH, DIFF, ERROR_MISMATCH, COMMENT_SKIPPED, FAILURE }
+
 @Serializable
 data class MismatchReport(
     val type: String,
@@ -16,7 +18,7 @@ data class MismatchReport(
 @Serializable
 data class FileReport(
     val filePath: String,
-    val status: String,         // "MATCH", "DIFF", "ERROR_MISMATCH", "COMMENT_SKIPPED", "FAILURE"
+    val status: Status,
     val mismatchCount: Int,
     val mismatches: List<MismatchReport>,
     val error: String?,
@@ -28,14 +30,14 @@ fun BatchFileResult.toFileReport(): FileReport = when (this) {
     is BatchFileResult.Success -> when (val cr = comparisonResult) {
         is ComparisonResult.Match -> FileReport(
             filePath = file.absoluteFile.invariantSeparatorsPath,
-            status = "MATCH",
+            status = Status.MATCH,
             mismatchCount = 0,
             mismatches = emptyList(),
             error = null,
         )
         is ComparisonResult.Diff -> FileReport(
             filePath = file.absoluteFile.invariantSeparatorsPath,
-            status = "DIFF",
+            status = Status.DIFF,
             mismatchCount = cr.mismatchCount,
             mismatches = cr.mismatches.map { m ->
                 MismatchReport(
@@ -50,7 +52,7 @@ fun BatchFileResult.toFileReport(): FileReport = when (this) {
         )
         is ComparisonResult.ErrorMismatch -> FileReport(
             filePath = file.absoluteFile.invariantSeparatorsPath,
-            status = "ERROR_MISMATCH",
+            status = Status.ERROR_MISMATCH,
             mismatchCount = 0,
             mismatches = emptyList(),
             error = null,
@@ -59,7 +61,7 @@ fun BatchFileResult.toFileReport(): FileReport = when (this) {
         )
         is ComparisonResult.CommentSkipped -> FileReport(
             filePath = file.absoluteFile.invariantSeparatorsPath,
-            status = "COMMENT_SKIPPED",
+            status = Status.COMMENT_SKIPPED,
             mismatchCount = 0,
             mismatches = emptyList(),
             error = null,
@@ -67,7 +69,7 @@ fun BatchFileResult.toFileReport(): FileReport = when (this) {
     }
     is BatchFileResult.Failure -> FileReport(
         filePath = file.absoluteFile.invariantSeparatorsPath,
-        status = "FAILURE",
+        status = Status.FAILURE,
         mismatchCount = 0,
         mismatches = emptyList(),
         error = error,
