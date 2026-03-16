@@ -18,7 +18,7 @@ class ReportWriterTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun `writeAll produces one JSON file per result`() {
+    fun `writeAll skips MATCH results and writes non-match reports only`() {
         val outputDir = createTempDirectory("report-test").toFile()
         val results = listOf(
             BatchFileResult.Success(File("match.sml"), ComparisonResult.Match),
@@ -36,25 +36,20 @@ class ReportWriterTest {
         ReportWriter.writeAll(results, outputDir)
 
         val files = outputDir.listFiles()?.map { it.name } ?: emptyList()
-        assertEquals(3, files.size, "Expected 3 JSON files")
-        assertTrue(files.contains("match.json"))
+        assertEquals(2, files.size, "Expected 2 JSON files (match skipped)")
         assertTrue(files.contains("diff.json"))
         assertTrue(files.contains("fail.json"))
     }
 
     @Test
-    fun `match result produces status MATCH with empty mismatches`() {
+    fun `match result produces no output file`() {
         val outputDir = createTempDirectory("report-test").toFile()
         val result = BatchFileResult.Success(File("test.sml"), ComparisonResult.Match)
 
         ReportWriter.writeAll(listOf(result), outputDir)
 
         val reportFile = File(outputDir, "test.json")
-        val report = json.decodeFromString<FileReport>(reportFile.readText())
-        assertEquals(Status.MATCH, report.status)
-        assertEquals(0, report.mismatchCount)
-        assertTrue(report.mismatches.isEmpty())
-        assertNull(report.error)
+        assertTrue(!reportFile.exists(), "MATCH results should not produce a JSON file")
     }
 
     @Test
@@ -104,7 +99,10 @@ class ReportWriterTest {
     @Test
     fun `output file named after input file with json extension`() {
         val outputDir = createTempDirectory("report-test").toFile()
-        val result = BatchFileResult.Success(File("test.sml"), ComparisonResult.Match)
+        val result = BatchFileResult.Success(
+            File("test.sml"),
+            ComparisonResult.Diff(listOf(Mismatch(MismatchType.ORACLE_ONLY, 0, -1, "tok", null)))
+        )
 
         ReportWriter.writeAll(listOf(result), outputDir)
 
@@ -116,7 +114,10 @@ class ReportWriterTest {
     fun `output directory is created if it does not exist`() {
         val baseDir = createTempDirectory("report-test").toFile()
         val nonExistentDir = File(baseDir, "subdir/nested")
-        val result = BatchFileResult.Success(File("test.sml"), ComparisonResult.Match)
+        val result = BatchFileResult.Success(
+            File("test.sml"),
+            ComparisonResult.Diff(listOf(Mismatch(MismatchType.ORACLE_ONLY, 0, -1, "tok", null)))
+        )
 
         ReportWriter.writeAll(listOf(result), nonExistentDir)
 

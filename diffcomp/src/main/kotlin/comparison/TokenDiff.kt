@@ -20,18 +20,25 @@ object TokenDiff {
 
         val mismatches = mutableListOf<Mismatch>()
 
-        // Detect WRONG_TOKEN_POSITION: matched by LCS but at different indices
+        // Detect WRONG_TOKEN_POSITION: matched by LCS but at different indices.
+        // Only report the first occurrence of each distinct offset to avoid
+        // cascading noise after a single insertion or deletion.
+        val reportedOffsets = mutableSetOf<Int>()
         for ((i, j) in matchedPairs) {
             if (i != j) {
-                mismatches.add(
-                    Mismatch(
-                        type = MismatchType.WRONG_TOKEN_POSITION,
-                        oracleIndex = i,
-                        polylexIndex = j,
-                        oracleToken = oracleTokens[i],
-                        polylexToken = polylexTokens[j],
+                val offset = i - j
+                if (offset !in reportedOffsets) {
+                    reportedOffsets.add(offset)
+                    mismatches.add(
+                        Mismatch(
+                            type = MismatchType.WRONG_TOKEN_POSITION,
+                            oracleIndex = i,
+                            polylexIndex = j,
+                            oracleToken = oracleTokens[i],
+                            polylexToken = polylexTokens[j],
+                        )
                     )
-                )
+                }
             }
         }
 

@@ -11,8 +11,9 @@ object ReportWriter {
         outputDir.mkdirs()
         for (result in results) {
             val report = result.toFileReport()
+            if (report.status == Status.MATCH) continue
             val json = prettyJson.encodeToString(report)
-            val outFile = File(outputDir, "${result.file.nameWithoutExtension}.json")
+            val outFile = File(outputDir, "${report.status.name.uppercase()}>>=${result.file.nameWithoutExtension}.json")
             outFile.writeText(json)
         }
     }
