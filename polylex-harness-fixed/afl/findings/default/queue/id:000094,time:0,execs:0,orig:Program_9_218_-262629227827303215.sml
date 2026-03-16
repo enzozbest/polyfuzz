@@ -1,0 +1,2 @@
+(*$*)fun  m #"\a"  [ () ]=b_D  and  i_ _ ( {  8=eo  },dmQ,D  0w88)  ()=596e9 | vhI  [ 9,lS' ]  _  (77936, nX : word )= () fun p { ..., e,t =[]  }  ( () ) (c6q ::_, f ) =()
+ val  _ : Bw.oQ =op ^ and "O"=fa
