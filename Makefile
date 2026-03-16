@@ -4,7 +4,7 @@
 # NOTE: smlgen is a git submodule. Run `git submodule update --init smlgen`
 # before building.
 
-.PHONY: all build-smlgen build-polylex build-diffcomp build-orchestrator test check clean
+.PHONY: all build-smlgen build-polylex build-diffcomp build-orchestrator test check clean run
 
 all: build-smlgen build-polylex build-diffcomp build-orchestrator
 
@@ -18,7 +18,7 @@ build-diffcomp:
 	cd diffcomp && ./gradlew installDist
 
 build-orchestrator:
-	cd orchestrator && uv sync && source .venv/bin/activate
+	uv sync --project orchestrator
 
 test:
 	cd orchestrator && uv run pytest
@@ -29,6 +29,10 @@ check: all
 	@test -x polylex-harness/polylex_fuzz || (echo "ERROR: polylex-harness/polylex_fuzz not found or not executable" && exit 1)
 	@test -x diffcomp/build/install/diffcomp/bin/diffcomp || (echo "ERROR: diffcomp/build/install/diffcomp/bin/diffcomp not found or not executable" && exit 1)
 	@echo "All artifacts verified."
+
+# Run the orchestrator — pass arguments via ARGS, e.g.: make run ARGS="-d ./results -n 50"
+run: build-orchestrator
+	./polyfuzz $(ARGS)
 
 clean:
 	-cd smlgen && ./gradlew clean 2>/dev/null || true

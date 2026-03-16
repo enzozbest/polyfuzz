@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Thin wrapper to run the polyfuzz orchestrator from the repo root.
+# Usage: ./polyfuzz [OPTIONS] [COMMAND]
+#
+# Automatically installs dependencies on first run via `uv sync`.
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+ORCH_DIR="$REPO_DIR/orchestrator"
+
+# Ensure dependencies are installed (fast no-op if already synced)
+uv sync --project "$ORCH_DIR" --quiet
+
+exec uv run --project "$ORCH_DIR" polyfuzz "$@"
