@@ -1,1 +1,0 @@
-fun  z _  { jD  }=(n1d  andalso nE,yE ) | j' #"1" = { r=op  *,m_h = () }  =  j

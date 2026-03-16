@@ -1,1 +1,0 @@
-fun  l (x) o= #1  0wxCc  and ta  { b9=214, v =_ }  _= #"l"  (c )

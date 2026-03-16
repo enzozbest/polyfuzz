@@ -1,1 +1,0 @@
-val  qq=pd  [ (OURB7.a,SOME )] and "pgma\fv;\n"= ( hgG, op  :: )
