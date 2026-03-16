@@ -80,8 +80,6 @@ class PipelineExecutor:
             console.print(
                 f"[green]  completed in {result.duration_seconds:.1f}s[/green]"
             )
-            if result.stdout.strip():
-                console.print(result.stdout.strip())
             results.append(result)
 
         total_time = sum(r.duration_seconds for r in results)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from polyfuzz_orchestrator.cli import cli
@@ -39,56 +40,29 @@ class TestCLIHelp:
         assert "analyse" in result.output
 
     def test_help_shows_subcommands(self):
-        """polyfuzz --help shows all stage subcommands plus analyse."""
+        """polyfuzz --help shows run-stage and analyse subcommands."""
         runner = CliRunner()
         result = runner.invoke(cli, ["--help"])
-        assert "only-smlgen" in result.output
-        assert "only-afl" in result.output
-        assert "only-diffcomp" in result.output
+        assert "run-stage" in result.output
         assert "analyse" in result.output
 
 
 class TestCLISubcommands:
     """Test CLI subcommand routing to PipelineExecutor."""
 
-    def test_only_smlgen_invokes_pipeline_with_smlgen(self, tmp_path: Path):
-        """polyfuzz -d /tmp/test only-smlgen invokes pipeline with only_stage='smlgen'."""
+    @pytest.mark.parametrize("stage", ["smlgen", "afl", "diffcomp", "coverage"])
+    def test_run_stage_invokes_pipeline_with_stage(self, tmp_path: Path, stage: str):
+        """polyfuzz -d <dir> run-stage <stage> invokes pipeline with only_stage=<stage>."""
         runner = CliRunner()
 
         mock_executor = MagicMock()
         mock_executor.run.return_value = []
 
         with patch("polyfuzz_orchestrator.cli.PipelineExecutor", return_value=mock_executor):
-            result = runner.invoke(cli, ["-d", str(tmp_path), "only-smlgen"])
+            result = runner.invoke(cli, ["-d", str(tmp_path), "run-stage", stage])
 
         assert result.exit_code == 0
-        mock_executor.run.assert_called_once_with(only_stage="smlgen")
-
-    def test_only_afl_invokes_pipeline_with_afl(self, tmp_path: Path):
-        """polyfuzz -d /tmp/test only-afl invokes pipeline with only_stage='afl'."""
-        runner = CliRunner()
-
-        mock_executor = MagicMock()
-        mock_executor.run.return_value = []
-
-        with patch("polyfuzz_orchestrator.cli.PipelineExecutor", return_value=mock_executor):
-            result = runner.invoke(cli, ["-d", str(tmp_path), "only-afl"])
-
-        assert result.exit_code == 0
-        mock_executor.run.assert_called_once_with(only_stage="afl")
-
-    def test_only_diffcomp_invokes_pipeline_with_diffcomp(self, tmp_path: Path):
-        """polyfuzz -d /tmp/test only-diffcomp invokes pipeline with only_stage='diffcomp'."""
-        runner = CliRunner()
-
-        mock_executor = MagicMock()
-        mock_executor.run.return_value = []
-
-        with patch("polyfuzz_orchestrator.cli.PipelineExecutor", return_value=mock_executor):
-            result = runner.invoke(cli, ["-d", str(tmp_path), "only-diffcomp"])
-
-        assert result.exit_code == 0
-        mock_executor.run.assert_called_once_with(only_stage="diffcomp")
+        mock_executor.run.assert_called_once_with(only_stage=stage)
 
     def test_no_subcommand_invokes_campaign_orchestrator(self, tmp_path: Path):
         """polyfuzz -d /tmp/test with no subcommand runs CampaignOrchestrator."""

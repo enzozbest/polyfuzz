@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -90,18 +91,11 @@ class CampaignOrchestrator:
             shutil.rmtree(campaign_dir)
 
         campaign_dir.mkdir(parents=True, exist_ok=True)
-        campaign_config = PipelineConfig(
+        campaign_config = dataclasses.replace(
+            self._config,
             work_dir=campaign_dir,
-            tests_per_campaign=self._config.tests_per_campaign,
             seed=campaign_seed,
             num_campaigns=1,
-            afl_timeout_s=self._config.afl_timeout_s,
-            afl_exec_timeout_ms=self._config.afl_exec_timeout_ms,
-            stage_timeout_s=self._config.stage_timeout_s,
-            smlgen_bin=self._config.smlgen_bin,
-            polylex_bin=self._config.polylex_bin,
-            diffcomp_bin=self._config.diffcomp_bin,
-            afl_fuzz_bin=self._config.afl_fuzz_bin,
         )
 
         start_time = datetime.now(UTC).isoformat()
