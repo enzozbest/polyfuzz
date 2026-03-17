@@ -1,4 +1,4 @@
-"""Parsers for AFL++ fuzzer_stats, plot_data, and diffcomp JSON reports.
+"""Parsers for AFL++ fuzzer_stats and diffcomp JSON reports.
 
 Pure functions that operate on file paths and return typed data.
 All handle missing or malformed input gracefully (return empty results, never raise).
@@ -11,26 +11,6 @@ import logging
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-
-# AFL++ plot_data standard columns (15 columns).
-# Source: AFL++ src/afl-fuzz-init.c setup_dirs_fds()
-PLOT_DATA_COLUMNS = [
-    "relative_time",
-    "cycles_done",
-    "cur_item",
-    "corpus_count",
-    "pending_total",
-    "pending_favs",
-    "map_size",
-    "saved_crashes",
-    "saved_hangs",
-    "max_depth",
-    "execs_per_sec",
-    "total_execs",
-    "edges_found",
-    "total_crashes",
-    "servers_count",
-]
 
 
 def parse_fuzzer_stats(stats_path: Path) -> dict[str, str | int | float]:
@@ -72,42 +52,6 @@ def parse_fuzzer_stats(stats_path: Path) -> dict[str, str | int | float]:
                     result[key] = value
 
     return result
-
-
-def parse_plot_data(plot_data_path: Path) -> list[dict[str, float]]:
-    """Parse AFL++ plot_data CSV into a list of dicts keyed by column name.
-
-    Args:
-        plot_data_path: Path to the plot_data file.
-
-    Returns:
-        List of row dictionaries with float values for each known column.
-    """
-    rows: list[dict[str, float]] = []
-    try:
-        text = plot_data_path.read_text(encoding="utf-8")
-    except (FileNotFoundError, OSError) as exc:
-        logger.debug("Cannot read plot_data at %s: %s", plot_data_path, exc)
-        return rows
-
-    for line in text.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-
-        parts = [p.strip() for p in line.split(",")]
-        row: dict[str, float] = {}
-        for i, col_name in enumerate(PLOT_DATA_COLUMNS):
-            if i < len(parts):
-                try:
-                    row[col_name] = float(parts[i])
-                except ValueError:
-                    row[col_name] = 0.0
-            else:
-                row[col_name] = 0.0
-        rows.append(row)
-
-    return rows
 
 
 def parse_diffcomp_reports(diffcomp_dir: Path) -> tuple[int, int, int]:

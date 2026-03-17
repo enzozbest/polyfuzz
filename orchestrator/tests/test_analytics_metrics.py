@@ -25,7 +25,6 @@ def _create_complete_campaign(
     stage_coverage: float = 0.5,
     bitmap_cvg: float = 45.23,
     edges_found: int = 1234,
-    corpus_count: int = 567,
     initial_corpus_files: int = 100,
     queue_files: int = 150,
     match_count: int = 140,
@@ -70,18 +69,6 @@ def _create_complete_campaign(
     (afl_default / "fuzzer_stats").write_text(
         f"bitmap_cvg        : {bitmap_cvg}%\n"
         f"edges_found       : {edges_found}\n"
-        f"corpus_count      : {corpus_count}\n"
-        f"execs_per_sec     : 1200.50\n"
-    )
-
-    # Write plot_data
-    (afl_default / "plot_data").write_text(
-        "# relative_time, cycles_done, cur_item, corpus_count, "
-        "pending_total, pending_favs, map_size, saved_crashes, "
-        "saved_hangs, max_depth, execs_per_sec, total_execs, "
-        "edges_found, total_crashes, servers_count\n"
-        "0, 0, 0, 100, 100, 50, 0.05, 0, 0, 1, 500.00, 0, 50, 0, 0\n"
-        "5, 0, 15, 105, 85, 45, 1.23, 0, 0, 2, 1200.50, 6002, 120, 0, 0\n"
     )
 
     # Create queue directory with files
@@ -159,7 +146,6 @@ class TestCampaignMetrics:
             branch_total=101,
             branch_covered=80,
             branch_coverage_pct=79.21,
-            plot_data=[],
         )
         assert metrics.campaign_id == "campaign_000"
         assert metrics.seed == 67890
@@ -178,7 +164,6 @@ class TestCampaignMetrics:
         assert metrics.branch_total == 101
         assert metrics.branch_covered == 80
         assert metrics.branch_coverage_pct == pytest.approx(79.21)
-        assert metrics.plot_data == []
 
     def test_is_frozen(self) -> None:
         metrics = CampaignMetrics(
@@ -199,7 +184,6 @@ class TestCampaignMetrics:
             branch_total=0,
             branch_covered=0,
             branch_coverage_pct=0.0,
-            plot_data=[],
         )
         with pytest.raises(AttributeError):
             metrics.campaign_id = "changed"  # type: ignore[misc]
@@ -245,7 +229,6 @@ class TestExtractCampaignMetrics:
         assert metrics.branch_total == 101
         assert metrics.branch_covered == 80
         assert metrics.branch_coverage_pct == pytest.approx(79.21)
-        assert len(metrics.plot_data) == 2
 
     def test_returns_none_for_missing_manifest(self, tmp_path: Path) -> None:
         campaign_dir = tmp_path / "campaign_001"
@@ -325,15 +308,6 @@ class TestExtractCampaignMetrics:
         assert metrics.branch_total == 0
         assert metrics.branch_covered == 0
         assert metrics.branch_coverage_pct == pytest.approx(0.0)
-
-    def test_plot_data_included_in_metrics(self, tmp_path: Path) -> None:
-        campaign_dir = tmp_path / "campaign_007"
-        _create_complete_campaign(campaign_dir)
-        metrics = extract_campaign_metrics(campaign_dir)
-        assert metrics is not None
-        assert len(metrics.plot_data) == 2
-        assert "relative_time" in metrics.plot_data[0]
-        assert "edges_found" in metrics.plot_data[0]
 
 
 # ---------------------------------------------------------------------------

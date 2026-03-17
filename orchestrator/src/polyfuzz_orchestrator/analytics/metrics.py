@@ -15,7 +15,6 @@ from polyfuzz_orchestrator.analytics.parsers import (
     parse_coverage_summary,
     parse_diffcomp_reports,
     parse_fuzzer_stats,
-    parse_plot_data,
 )
 from polyfuzz_orchestrator.manifest import is_campaign_complete
 from polyfuzz_orchestrator.stages.diffcomp import DiffcompStage
@@ -48,7 +47,6 @@ class CampaignMetrics:
     branch_total: int
     branch_covered: int
     branch_coverage_pct: float
-    plot_data: list[dict[str, float]]
 
 
 def _count_files(directory: Path) -> int:
@@ -124,8 +122,6 @@ def extract_campaign_metrics(campaign_dir: Path) -> CampaignMetrics | None:
         else 0.0
     )
 
-    plot_data = parse_plot_data(fuzzer_dir / "plot_data")
-
     coverage = parse_coverage_summary(
         campaign_dir / "coverage_out" / "coverage_summary.json"
     )
@@ -148,7 +144,6 @@ def extract_campaign_metrics(campaign_dir: Path) -> CampaignMetrics | None:
         branch_total=int(coverage.get("total_branches", 0)),
         branch_covered=int(coverage.get("covered_branches", 0)),
         branch_coverage_pct=float(coverage.get("branch_coverage_pct", 0.0)),
-        plot_data=plot_data,
     )
 
 

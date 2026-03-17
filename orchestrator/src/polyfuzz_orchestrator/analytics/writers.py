@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 from rich.table import Table
 
-from polyfuzz_orchestrator.analytics.aggregator import GrowthCurveData
 from polyfuzz_orchestrator.manifest import EXPERIMENT_MANIFEST_FILENAME, _atomic_write_json
 
 if TYPE_CHECKING:
@@ -113,7 +112,7 @@ def write_campaign_matrix(
         metrics: List of CampaignMetrics, one per campaign.
     """
 
-    # JSON output: list of dicts without plot_data
+    # JSON output: list of dicts
     json_rows = []
     for m in metrics:
         row = {col: getattr(m, col) for col in MATRIX_COLUMNS}
@@ -132,93 +131,18 @@ def write_campaign_matrix(
     _atomic_write_csv(analytics_dir / "campaign_matrix.csv", MATRIX_COLUMNS, csv_rows)
 
 
-def write_cross_campaign_summary(
-    analytics_dir: Path, stats: dict[str, dict[str, float]]
-) -> None:
-    """Write cross-campaign summary statistics as JSON and CSV.
-
-    JSON: metric_name -> {mean, median, stdev, ci_lower, ci_upper}.
-    CSV: one row per metric, all stats to 4dp.
-    Args:
-        analytics_dir: Output directory for analytics files.
-        stats: Cross-campaign statistics from compute_cross_campaign_stats.
-    """
-    _atomic_write_json(analytics_dir / "cross_campaign_summary.json", stats)
-
-    headers = ["metric", "mean", "median", "stdev", "ci_lower", "ci_upper"]
-    csv_rows = []
-    for metric_name, metric_stats in stats.items():
-        row = [
-            metric_name,
-            f"{metric_stats['mean']:.4f}",
-            f"{metric_stats['median']:.4f}",
-            f"{metric_stats['stdev']:.4f}",
-            f"{metric_stats['ci_lower']:.4f}",
-            f"{metric_stats['ci_upper']:.4f}",
-        ]
-        csv_rows.append(row)
-    _atomic_write_csv(analytics_dir / "cross_campaign_summary.csv", headers, csv_rows)
-
-
-def write_growth_curves(
-    analytics_dir: Path, curves: dict[str, GrowthCurveData]
-) -> None:
-    """Write growth curves as JSON and wide-format CSV per metric.
-
-    JSON: full GrowthCurveData structure.
-    CSV: wide format with time_s, per-campaign columns, mean, ci_lower, ci_upper, campaign_count.
-    Args:
-        analytics_dir: Output directory for analytics files.
-        curves: Growth curve data from interpolate_growth_curves.
-    """
-    for metric_name, curve in curves.items():
-        # JSON output
-        json_data = {
-            "time_grid": curve.time_grid,
-            "per_campaign": curve.per_campaign,
-            "mean": curve.mean,
-            "ci_lower": curve.ci_lower,
-            "ci_upper": curve.ci_upper,
-            "campaign_count": curve.campaign_count,
-        }
-        _atomic_write_json(
-            analytics_dir / f"{metric_name}_over_time.json", json_data
-        )
-
-        # CSV output: wide format
-        campaign_ids = sorted(curve.per_campaign.keys())
-        headers = ["time_s"] + campaign_ids + ["mean", "ci_lower", "ci_upper", "campaign_count"]
-
-        csv_rows = []
-        for i, t in enumerate(curve.time_grid):
-            row = [f"{t:.1f}"]
-            for cid in campaign_ids:
-                row.append(f"{curve.per_campaign[cid][i]:.4f}")
-            row.append(f"{curve.mean[i]:.4f}")
-            row.append(f"{curve.ci_lower[i]:.4f}")
-            row.append(f"{curve.ci_upper[i]:.4f}")
-            row.append(str(curve.campaign_count[i]))
-            csv_rows.append(row)
-
-        _atomic_write_csv(
-            analytics_dir / f"{metric_name}_over_time.csv", headers, csv_rows
-        )
-
-
 def write_summary_json(
     analytics_dir: Path,
     metrics: list[CampaignMetrics],
-    stats: dict[str, dict[str, float]],
     skipped: list[str],
     work_dir: Path,
 ) -> None:
     """Write experiment summary as JSON.
 
-    Includes experiment metadata from the experiment manifest, key aggregate numbers, and list of skipped campaigns.
+    Includes experiment metadata from the experiment manifest and list of skipped campaigns.
     Args:
         analytics_dir: Output directory for analytics files.
         metrics: List of CampaignMetrics for analyzed campaigns.
-        stats: Cross-campaign statistics.
         skipped: List of skipped campaign names.
         work_dir: Experiment working directory (for reading experiment manifest).
     """
@@ -228,9 +152,6 @@ def write_summary_json(
     except (json.JSONDecodeError, OSError):
         manifest = {}
 
-    key_metrics = ["bitmap_cvg", "edges_found", "mismatch_rate", "branch_coverage_pct"]
-    key_aggregates = {k: stats[k] for k in key_metrics if k in stats}
-
     summary = {
         "experiment_metadata": {
             "master_seed": manifest.get("master_seed"),
@@ -238,7 +159,6 @@ def write_summary_json(
             "campaigns_analyzed": len(metrics),
             "campaigns_skipped": len(skipped),
         },
-        "key_aggregates": key_aggregates,
         "skipped_campaigns": skipped,
     }
 
@@ -247,13 +167,11 @@ def write_summary_json(
 
 def print_terminal_summary(
     metrics: list[CampaignMetrics],
-    stats: dict[str, dict[str, float]],
     skipped: list[str],
 ) -> None:
     """Print a Rich-formatted summary table to the terminal.
     Args:
         metrics: List of CampaignMetrics for analyzed campaigns.
-        stats: Cross-campaign statistics.
         skipped: List of skipped campaign names.
     """
     console = Console()
@@ -290,24 +208,6 @@ def print_terminal_summary(
 
     console.print(table)
 
-    if stats:
-        cvg = stats.get("bitmap_cvg", {})
-        edges = stats.get("edges_found", {})
-        rate = stats.get("mismatch_rate", {})
-        branch_cvg = stats.get("branch_coverage_pct", {})
-
-        console.print(
-            f"\n[bold]Aggregates:[/bold] "
-            f"Coverage {cvg.get('mean', 0):.2f}% "
-            f"(CI: {cvg.get('ci_lower', 0):.2f}-{cvg.get('ci_upper', 0):.2f}), "
-            f"Edges {edges.get('mean', 0):.0f} "
-            f"(CI: {edges.get('ci_lower', 0):.0f}-{edges.get('ci_upper', 0):.0f}), "
-            f"Mismatch rate {rate.get('mean', 0):.4f} "
-            f"(CI: {rate.get('ci_lower', 0):.4f}-{rate.get('ci_upper', 0):.4f}), "
-            f"Branch cvg {branch_cvg.get('mean', 0):.2f}% "
-            f"(CI: {branch_cvg.get('ci_lower', 0):.2f}-{branch_cvg.get('ci_upper', 0):.2f})"
-        )
-
     if skipped:
         console.print(
             f"\n[yellow]Warning: {len(skipped)} campaign(s) skipped: "
@@ -318,8 +218,6 @@ def print_terminal_summary(
 def write_all_analytics(
     analytics_dir: Path,
     metrics: list[CampaignMetrics],
-    stats: dict[str, dict[str, float]],
-    curves: dict[str, GrowthCurveData],
     skipped: list[str],
     work_dir: Path,
 ) -> None:
@@ -329,13 +227,9 @@ def write_all_analytics(
     Args:
         analytics_dir: Output directory for analytics files.
         metrics: List of CampaignMetrics for analyzed campaigns.
-        stats: Cross-campaign statistics.
-        curves: Growth curve data.
         skipped: List of skipped campaign names.
         work_dir: Experiment working directory.
     """
     analytics_dir.mkdir(parents=True, exist_ok=True)
     write_campaign_matrix(analytics_dir, metrics)
-    write_cross_campaign_summary(analytics_dir, stats)
-    write_growth_curves(analytics_dir, curves)
-    write_summary_json(analytics_dir, metrics, stats, skipped, work_dir)
+    write_summary_json(analytics_dir, metrics, skipped, work_dir)

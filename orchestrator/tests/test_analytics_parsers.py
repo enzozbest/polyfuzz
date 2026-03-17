@@ -11,7 +11,6 @@ from polyfuzz_orchestrator.analytics.parsers import (
     parse_coverage_summary,
     parse_diffcomp_reports,
     parse_fuzzer_stats,
-    parse_plot_data,
 )
 
 # ---------------------------------------------------------------------------
@@ -94,94 +93,6 @@ class TestParseFuzzerStats:
         stats_file.write_text("  edges_found  :  42  \n")
         result = parse_fuzzer_stats(stats_file)
         assert result["edges_found"] == 42
-
-
-# ---------------------------------------------------------------------------
-# parse_plot_data tests
-# ---------------------------------------------------------------------------
-
-
-class TestParsePlotData:
-    """Tests for AFL++ plot_data CSV parsing."""
-
-    def test_parses_csv_rows_into_dicts(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text(
-            "# relative_time, cycles_done, cur_item, corpus_count, "
-            "pending_total, pending_favs, map_size, saved_crashes, "
-            "saved_hangs, max_depth, execs_per_sec, total_execs, "
-            "edges_found, total_crashes, servers_count\n"
-            "0, 0, 0, 100, 100, 50, 0.05, 0, 0, 1, 500.00, 0, 50, 0, 0\n"
-        )
-        rows = parse_plot_data(plot_file)
-        assert len(rows) == 1
-        assert rows[0]["relative_time"] == pytest.approx(0.0)
-        assert rows[0]["corpus_count"] == pytest.approx(100.0)
-        assert rows[0]["map_size"] == pytest.approx(0.05)
-        assert rows[0]["edges_found"] == pytest.approx(50.0)
-
-    def test_skips_header_and_blank_lines(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text(
-            "# header line\n"
-            "\n"
-            "0, 0, 0, 100, 100, 50, 0.05, 0, 0, 1, 500.00, 0, 50, 0, 0\n"
-            "\n"
-            "5, 1, 10, 110, 90, 45, 1.23, 0, 0, 2, 600.00, 3000, 80, 0, 0\n"
-        )
-        rows = parse_plot_data(plot_file)
-        assert len(rows) == 2
-
-    def test_handles_extra_sanitizer_columns(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text(
-            "# header\n"
-            "0, 0, 0, 100, 100, 50, 0.05, 0, 0, 1, 500.00, 0, 50, 0, 0, 999, 888\n"
-        )
-        rows = parse_plot_data(plot_file)
-        assert len(rows) == 1
-        # Extra columns beyond 15 should be ignored
-        assert len(rows[0]) == 15
-
-    def test_returns_empty_list_for_missing_file(self, tmp_path: Path) -> None:
-        result = parse_plot_data(tmp_path / "nonexistent")
-        assert result == []
-
-    def test_returns_empty_list_for_empty_file(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text("")
-        result = parse_plot_data(plot_file)
-        assert result == []
-
-    def test_returns_empty_list_for_header_only(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text("# header line only\n")
-        result = parse_plot_data(plot_file)
-        assert result == []
-
-    def test_multiple_rows(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text(
-            "# header\n"
-            "0, 0, 0, 100, 100, 50, 0.05, 0, 0, 1, 500.00, 0, 50, 0, 0\n"
-            "5, 0, 15, 105, 85, 45, 1.23, 0, 0, 2, 1200.50, 6002, 120, 0, 0\n"
-            "10, 1, 30, 115, 70, 40, 2.50, 0, 0, 3, 1500.00, 15000, 200, 0, 0\n"
-        )
-        rows = parse_plot_data(plot_file)
-        assert len(rows) == 3
-        assert rows[1]["relative_time"] == pytest.approx(5.0)
-        assert rows[1]["edges_found"] == pytest.approx(120.0)
-        assert rows[2]["corpus_count"] == pytest.approx(115.0)
-
-    def test_handles_value_error_defaults_to_zero(self, tmp_path: Path) -> None:
-        plot_file = tmp_path / "plot_data"
-        plot_file.write_text(
-            "# header\n"
-            "0, bad, 0, 100, 100, 50, 0.05, 0, 0, 1, 500.00, 0, 50, 0, 0\n"
-        )
-        rows = parse_plot_data(plot_file)
-        assert len(rows) == 1
-        assert rows[0]["cycles_done"] == pytest.approx(0.0)
 
 
 # ---------------------------------------------------------------------------
