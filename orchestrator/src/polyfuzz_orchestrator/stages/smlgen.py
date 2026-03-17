@@ -5,7 +5,7 @@ from pathlib import Path
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PreflightError
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult
-from polyfuzz_orchestrator.stages import validate_single
+from polyfuzz_orchestrator.stages.validation import validate_single
 from polyfuzz_orchestrator.stages.base import Stage
 
 

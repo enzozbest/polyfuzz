@@ -10,7 +10,7 @@ from pathlib import Path
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PreflightError
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult
-from polyfuzz_orchestrator.stages import validate_path, validate_single
+from polyfuzz_orchestrator.stages.validation import validate_path, validate_single
 from polyfuzz_orchestrator.stages.base import Stage
 from polyfuzz_orchestrator.stages.diffcomp import DiffcompStage
 
@@ -33,7 +33,7 @@ class CoverageStage(Stage):
         lex_ml_errors = [
             x for x in [validate_path(config.lex_ml_path, "LEX_.ML")] if x is not None
         ]  # Trick using comprehensions for null check!
-        queue_errors = [] if queue_dir else [f"AFL++ queue directory not found at {queue_dir.name}"]
+        queue_errors = [] if queue_dir else ["AFL++ queue directory not found"]
 
         errors = [*polylex_replay_errors, *lex_ml_errors, *queue_errors]
         if errors:
