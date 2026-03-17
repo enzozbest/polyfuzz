@@ -1,11 +1,9 @@
-from __future__ import annotations
-
-import os
 from pathlib import Path
 
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PreflightError
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult
+from polyfuzz_orchestrator.stages import validate_single
 from polyfuzz_orchestrator.stages.base import Stage
 
 
@@ -22,25 +20,20 @@ class DiffcompStage(Stage):
 
     def validate(self, campaign_dir: Path, config: PipelineConfig) -> None:
         """Verify diffcomp is executable and AFL++ queue has files."""
-        errors: list[str] = []
-
-        if not config.diffcomp_bin.exists():
-            errors.append(f"diffcomp not found at {config.diffcomp_bin}")
-        elif not os.access(config.diffcomp_bin, os.X_OK):
-            errors.append(
-                f"diffcomp at {config.diffcomp_bin} is not executable"
-            )
-
         queue_dir = self._find_queue_dir(campaign_dir)
-        if queue_dir is None:
-            errors.append(
-                f"AFL++ queue directory not found under {campaign_dir / 'afl_output'}"
-            )
-        else:
-            input_files = self._list_input_files(queue_dir)
-            if not input_files:
-                errors.append(f"AFL++ queue directory at {queue_dir} is empty")
+        diffcomp_errors = validate_single(config.diffcomp_bin, "diffcomp")
+        queue_dir_errors = (
+            []
+            if queue_dir
+            else [f"AFL++ queue directory not found under {campaign_dir / 'afl_output'}"]
+        )
 
+        file_errors = []
+        if not queue_dir_errors:
+            input_files = self._list_input_files(queue_dir)
+            file_errors = [] if input_files else [f"AFL++ queue directory at {queue_dir} is empty"]
+
+        errors = [*diffcomp_errors, *queue_dir_errors, *file_errors]
         if errors:
             raise PreflightError(errors)
 

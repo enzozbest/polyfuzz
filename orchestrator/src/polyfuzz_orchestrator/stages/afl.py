@@ -6,6 +6,7 @@ from pathlib import Path
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PreflightError
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult
+from polyfuzz_orchestrator.stages import validate_path, validate_single, validate_sml_files_exist
 from polyfuzz_orchestrator.stages.base import Stage
 
 
@@ -22,27 +23,20 @@ class AflStage(Stage):
 
     def validate(self, campaign_dir: Path, config: PipelineConfig) -> None:
         """Verify afl-fuzz exists, polylex binary exists, and corpus is non-empty."""
-        errors: list[str] = []
-
-        if not config.afl_fuzz_bin.exists():
-            errors.append(f"afl-fuzz not found at {config.afl_fuzz_bin}")
-        elif not os.access(config.afl_fuzz_bin, os.X_OK):
-            errors.append(f"afl-fuzz at {config.afl_fuzz_bin} is not executable")
-
-        if not config.polylex_bin.exists():
-            errors.append(f"polylex binary not found at {config.polylex_bin}")
-        elif not os.access(config.polylex_bin, os.X_OK):
-            errors.append(f"polylex binary at {config.polylex_bin} is not executable")
-
         corpus_dir = campaign_dir / "corpus"
-        if not corpus_dir.exists():
-            os.mkdir(corpus_dir)
-            errors.append(f"corpus directory not found at {corpus_dir}. Did smlgen run?")
-        else:
-            sml_files = list(corpus_dir.glob("*.sml"))
-            all_files = list(corpus_dir.iterdir())
-            if not sml_files and not all_files:
-                errors.append(f"corpus directory at {corpus_dir} is empty")
+
+        afl_errors = validate_single(config.afl_fuzz_bin, "afl-fuzz")
+        polylex_errors = validate_single(config.polylex_bin, "polylex")
+        corpus_errors = [
+            x
+            for x in [
+                validate_path(corpus_dir, "corpus"),
+                validate_sml_files_exist(corpus_dir, "corpus"),
+            ]
+            if x is not None
+        ]  # Trick using comprehensions for null check!
+
+        errors = [*afl_errors, *polylex_errors, *corpus_errors]
 
         if errors:
             raise PreflightError(errors)
@@ -61,9 +55,12 @@ class AflStage(Stage):
 
         cmd: list[str] = [
             str(config.afl_fuzz_bin),
-            "-i", str(corpus_dir),
-            "-o", str(afl_output_dir),
-            "-V", str(config.afl_timeout_s),
+            "-i",
+            str(corpus_dir),
+            "-o",
+            str(afl_output_dir),
+            "-V",
+            str(config.afl_timeout_s),
         ]
 
         # Pass seed for reproducible fuzzing

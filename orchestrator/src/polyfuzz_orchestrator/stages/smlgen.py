@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from polyfuzz_orchestrator.config import PipelineConfig
 from polyfuzz_orchestrator.errors import PreflightError
 from polyfuzz_orchestrator.process import ProcessRunner, StageResult
+from polyfuzz_orchestrator.stages import validate_single
 from polyfuzz_orchestrator.stages.base import Stage
 
 
@@ -23,13 +23,7 @@ class SmlgenStage(Stage):
 
     def validate(self, campaign_dir: Path, config: PipelineConfig) -> None:
         """Verify smlgen binary exists and is executable."""
-        errors: list[str] = []
-
-        if not config.smlgen_bin.exists():
-            errors.append(f"smlgen binary not found at {config.smlgen_bin}")
-        elif not os.access(config.smlgen_bin, os.X_OK):
-            errors.append(f"smlgen binary at {config.smlgen_bin} is not executable")
-
+        errors = validate_single(config.smlgen_bin, "smlgen")
         if errors:
             raise PreflightError(errors)
 
