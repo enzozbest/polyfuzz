@@ -28,7 +28,7 @@ class DiffCompCommand : CliktCommand(name = "diffcomp") {
         .help("Maximum concurrent polylex processes (default: available processors)")
 
     val polylexBinary: String by option("--polylex", "-l")
-        .default("../polylex-harness/polylex_fuzz")
+        .default("../polylex-harness-fixed/polylex_fuzz")
         .help("Path to polylex_fuzz binary")
 
     val outputDir: Path by option("--output-dir", "-o")
