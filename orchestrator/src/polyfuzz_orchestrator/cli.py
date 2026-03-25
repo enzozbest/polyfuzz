@@ -66,6 +66,12 @@ VALID_STAGES = ("smlgen", "afl", "diffcomp", "coverage")
     default=False,
     help="Skip automatic analytics after campaign completion.",
 )
+@click.option(
+    "--no-afl",
+    is_flag=True,
+    default=False,
+    help="Skip AFL fuzzing; feed smlgen corpus directly to diffcomp and coverage.",
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -76,6 +82,7 @@ def cli(
     afl_timeout: int,
     config: Path | None,
     no_analytics: bool,
+    no_afl: bool,
 ) -> None:
     """PolyFuzz differential testing orchestrator."""
     ctx.ensure_object(dict)
@@ -87,6 +94,7 @@ def cli(
         seed=seed,
         num_campaigns=campaigns,
         afl_timeout_s=afl_timeout,
+        no_afl=no_afl,
     )
     ctx.obj["config"] = cfg
 

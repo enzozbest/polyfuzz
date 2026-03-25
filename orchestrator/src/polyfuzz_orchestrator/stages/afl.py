@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.resources
 import os
 from pathlib import Path
 
@@ -71,6 +72,11 @@ class AflStage(Stage):
         if config.afl_exec_timeout_ms is not None:
             cmd.extend(["-t", str(config.afl_exec_timeout_ms)])
 
+        # Add dictionary for smarter mutations
+        dict_path = self._resolve_dict(config)
+        if dict_path is not None:
+            cmd.extend(["-x", str(dict_path)])
+
         cmd.extend(["--", str(config.polylex_bin)])
 
         # Merge with current environment and add AFL++ headless variables
@@ -88,3 +94,17 @@ class AflStage(Stage):
             timeout_s=config.stage_timeout_s,
             env=env,
         )
+
+    @staticmethod
+    def _resolve_dict(config: PipelineConfig) -> Path | None:
+        """Resolve the AFL dictionary path.
+
+        Uses config.afl_dict if set, otherwise falls back to the bundled sml.dict.
+        Returns None if the resolved path doesn't exist.
+        """
+        if config.afl_dict is not None:
+            return config.afl_dict if config.afl_dict.exists() else None
+        # Fall back to bundled dictionary
+        ref = importlib.resources.files("polyfuzz_orchestrator") / "data" / "sml.dict"
+        bundled = Path(str(ref))
+        return bundled if bundled.exists() else None

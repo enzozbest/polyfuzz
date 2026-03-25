@@ -104,10 +104,11 @@ def verify_components(config: PipelineConfig) -> list[str]:
     bin_checks = [
         (config.smlgen_bin, "smlgen binary"),
         (config.polylex_bin, "polylex binary"),
-        (config.afl_fuzz_bin, "afl-fuzz binary"),
         (config.diffcomp_bin, "diffcomp binary"),
         (config.polylex_replay_bin, "polylex_replay binary"),
     ]
+    if not config.no_afl:
+        bin_checks.append((config.afl_fuzz_bin, "afl-fuzz binary"))
     for path, label in bin_checks:
         if not path.exists():
             errors.append(f"{label} not found at {path}")

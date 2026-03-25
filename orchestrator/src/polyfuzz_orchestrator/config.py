@@ -6,10 +6,18 @@ from pathlib import Path
 from typing import Any
 
 # Fields that should be converted from strings to Path objects
-_PATH_FIELDS = frozenset({
-    "work_dir", "smlgen_bin", "polylex_bin", "diffcomp_bin", "afl_fuzz_bin",
-    "polylex_replay_bin", "lex_ml_path",
-})
+_PATH_FIELDS = frozenset(
+    {
+        "work_dir",
+        "smlgen_bin",
+        "polylex_bin",
+        "diffcomp_bin",
+        "afl_fuzz_bin",
+        "polylex_replay_bin",
+        "lex_ml_path",
+        "afl_dict",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -25,18 +33,25 @@ class PipelineConfig:
     num_campaigns: int = 1  # Number of campaigns to run (1 = single-campaign mode)
     afl_timeout_s: int = 300  # AFL++ campaign duration via -V flag
     afl_exec_timeout_ms: int | None = None  # Per-input timeout via -t, None = auto-calibrate
-    stage_timeout_s: int = 600  # Orchestrator subprocess timeout
+    stage_timeout_s: int | None = None  # Orchestrator subprocess timeout (auto-derived if None)
+    no_afl: bool = False  # Skip AFL stage; feed smlgen corpus directly to diffcomp/coverage
+    afl_dict: Path | None = None  # AFL dictionary file; None = use bundled sml.dict
 
     # Paths to components (discovered or configured)
     smlgen_bin: Path = field(default_factory=lambda: Path("smlgen/build/install/smlgen/bin/smlgen"))
-    polylex_bin: Path = field(default_factory=lambda: Path("polylex-harness/polylex_fuzz"))
-    diffcomp_bin: Path = field(default_factory=lambda: Path("diffcomp/build/install/diffcomp/bin/diffcomp"))
+    polylex_bin: Path = field(default_factory=lambda: Path("polylex-harness-fixed/polylex_fuzz"))
+    diffcomp_bin: Path = field(
+        default_factory=lambda: Path("diffcomp/build/install/diffcomp/bin/diffcomp")
+    )
     afl_fuzz_bin: Path = field(default_factory=lambda: Path("/usr/local/bin/afl-fuzz"))
     polylex_replay_bin: Path = field(default_factory=lambda: Path("polylex-harness/polylex_replay"))
     lex_ml_path: Path = field(default_factory=lambda: Path("polylex-harness/LEX_.ML"))
 
     def __post_init__(self) -> None:
-        """Validate timeout hierarchy."""
+        """Auto-derive stage_timeout_s if not set, then validate."""
+        if self.stage_timeout_s is None:
+            # frozen dataclass — must use object.__setattr__
+            object.__setattr__(self, "stage_timeout_s", self.afl_timeout_s + 300)
         if self.stage_timeout_s <= self.afl_timeout_s:
             msg = (
                 f"stage_timeout_s ({self.stage_timeout_s}) must be greater than "

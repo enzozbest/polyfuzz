@@ -16,7 +16,7 @@ class TestPipelineConfigDefaults:
 
         assert config.tests_per_campaign == 100
         assert config.afl_timeout_s == 300
-        assert config.stage_timeout_s == 600
+        assert config.stage_timeout_s == 600  # auto-derived: afl_timeout_s + 300
         assert config.seed is None
         assert config.afl_exec_timeout_ms is None
         assert config.polylex_replay_bin == Path("polylex-harness/polylex_replay")

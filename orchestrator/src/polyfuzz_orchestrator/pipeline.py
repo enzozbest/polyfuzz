@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import shutil
+from pathlib import Path
+
 from rich.console import Console
 
 from polyfuzz_orchestrator.config import PipelineConfig
@@ -57,8 +60,19 @@ class PipelineExecutor:
 
         stage_names = [only_stage] if only_stage else self.STAGE_ORDER
 
+        skip_afl = self._config.no_afl and "afl" in stage_names
+        if skip_afl:
+            stage_names = [s for s in stage_names if s != "afl"]
+            console.print("[bold yellow]>>> Skipping AFL (--no-afl): "
+                          "feeding smlgen corpus directly to diffcomp/coverage[/bold yellow]")
+
         results: list[StageResult] = []
         for stage_name in stage_names:
+            # After smlgen completes, populate the AFL queue dir from corpus
+            # so diffcomp/coverage find their inputs in the expected location.
+            if skip_afl and stage_name == "diffcomp":
+                self._populate_queue_from_corpus(self._config.work_dir)
+
             stage = self._stages[stage_name]
             console.print(f"[bold blue]>>> Stage: {stage.name}[/bold blue]")
             stage.validate(self._config.work_dir, self._config)
@@ -89,3 +103,18 @@ class PipelineExecutor:
         )
 
         return results
+
+    @staticmethod
+    def _populate_queue_from_corpus(campaign_dir: Path) -> None:
+        """Copy corpus files into the AFL queue directory structure.
+
+        DiffcompStage and CoverageStage expect inputs at
+        afl_output/default/queue/. When AFL is skipped, this method copies
+        the smlgen corpus there so downstream stages work unchanged.
+        """
+        corpus_dir = campaign_dir / "corpus"
+        queue_dir = campaign_dir / "afl_output" / "default" / "queue"
+        queue_dir.mkdir(parents=True, exist_ok=True)
+        for f in sorted(corpus_dir.iterdir()):
+            if f.is_file():
+                shutil.copy2(f, queue_dir / f.name)
