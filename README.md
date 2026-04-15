@@ -1,4 +1,6 @@
-# PolyFuzz
+# PolyFuzz 
+
+[![DOI](https://zenodo.org/badge/1121033071.svg)](https://doi.org/10.5281/zenodo.19593518)
 
 Differential testing infrastructure for the [PolyML](https://polyml.org) lexer. PolyFuzz automatically generates SML source files, lexes them with both PolyML and an independent reference lexer ([Verilex](verilex/)), and reports any discrepancies in token output.
 
